@@ -1,0 +1,968 @@
+/*************************************************
+ * ORTH-STORE - Code.gs
+ * Homepage data connection (read-only)
+ *
+ * Keeps "usage by month.gs" unchanged.
+ * Reads item names from ALL!A2:A38 and current/max
+ * quantities from the five location sheets:
+ * ED, Clinic, OT, PAED and W11D.
+ *************************************************/
+
+const ORTH_STORE_CONFIG = {
+  itemSheetName: "ALL",
+  itemRange: "A2:A38",
+  firstDataRow: 2,
+  lastDataRow: 38,
+  locations: [
+    { name: "ED", sheetName: "ED" },
+    { name: "Clinic", sheetName: "Clinic" },
+    { name: "OT", sheetName: "OT" },
+    { name: "Ward", sheetName: "W11D" },
+    { name: "Paed", sheetName: "PAED" }
+  ],
+  itemColumn: 1,
+  currentQuantityColumn: 3,
+  maximumQuantityColumn: 4
+};
+
+/**
+ * Serves Index.html as the web app page.
+ */
+function doGet() {
+  return HtmlService
+    .createHtmlOutputFromFile("Index")
+    .setTitle("ORTH-STORE")
+    .addMetaTag("viewport", "width=device-width, initial-scale=1");
+}
+
+/**
+ * Returns inventory data for the homepage.
+ * This function only reads spreadsheet data. It does not edit cells.
+ */
+function getStoreDashboardData() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+
+  if (!ss) {
+    throw new Error(
+      "No spreadsheet is connected. Open Apps Script from your ORTH-STORE spreadsheet."
+    );
+  }
+
+  const config = ORTH_STORE_CONFIG;
+  const allSheet = ss.getSheetByName(config.itemSheetName);
+
+  if (!allSheet) {
+    throw new Error('Could not find the "' + config.itemSheetName + '" sheet.');
+  }
+
+  const itemNames = allSheet
+    .getRange(config.itemRange)
+    .getDisplayValues()
+    .map(function (row) {
+      return String(row[0] || "").trim();
+    });
+
+  const inventory = [];
+  const locationSummaries = {};
+  const attentionItems = [];
+
+  let totalItems = 0;
+  let criticalItems = 0;
+  let outOfStock = 0;
+  let overstock = 0;
+
+  config.locations.forEach(function (location) {
+    const sheet = ss.getSheetByName(location.sheetName);
+
+    if (!sheet) {
+      throw new Error(
+        'Could not find the sheet "' + location.sheetName +
+        '" for location "' + location.name + '".'
+      );
+    }
+
+    const rowCount = config.lastDataRow - config.firstDataRow + 1;
+    const rows = sheet.getRange(
+      config.firstDataRow,
+      1,
+      rowCount,
+      config.maximumQuantityColumn
+    ).getValues();
+
+    let locationAttention = 0;
+    let locationOutOfStock = 0;
+    let locationItemCount = 0;
+
+    rows.forEach(function (row, index) {
+      const itemName = itemNames[index] || String(row[config.itemColumn - 1] || "").trim();
+
+      if (!itemName) return;
+
+      const currentRaw = row[config.currentQuantityColumn - 1];
+      const maximumRaw = row[config.maximumQuantityColumn - 1];
+
+      const current = toNumberOrNull_(currentRaw);
+      const maximum = toNumberOrNull_(maximumRaw);
+
+      const item = {
+        name: itemName,
+        location: location.name,
+        currentQuantity: current,
+        maximumQuantity: maximum,
+        status: getStockStatus_(current, maximum)
+      };
+
+      inventory.push(item);
+      locationItemCount++;
+      totalItems++;
+
+      if (current !== null && current <= 0) {
+        outOfStock++;
+        locationOutOfStock++;
+        locationAttention++;
+        attentionItems.push(item);
+      } else if (
+        current !== null &&
+        maximum !== null &&
+        maximum > 0 &&
+        current > maximum
+      ) {
+        overstock++;
+        locationAttention++;
+        attentionItems.push(item);
+      } else if (
+        current !== null &&
+        maximum !== null &&
+        maximum > 0 &&
+        current > 0 &&
+        current / maximum <= 0.2
+      ) {
+        criticalItems++;
+        locationAttention++;
+        attentionItems.push(item);
+      }
+    });
+
+    locationSummaries[location.name] = {
+      itemCount: locationItemCount,
+      attentionCount: locationAttention,
+      outOfStockCount: locationOutOfStock
+    };
+  });
+
+  // Put the most urgent items first: out of stock, then overstock,
+  // then critical stock.
+  const statusPriority = {
+    "Out of stock": 1,
+    "Over maximum": 2,
+    "Critical": 3
+  };
+
+  attentionItems.sort(function (a, b) {
+    return (statusPriority[a.status] || 9) - (statusPriority[b.status] || 9);
+  });
+
+  return {
+    success: true,
+    spreadsheetName: ss.getName(),
+    updatedAt: new Date().toISOString(),
+    summary: {
+      totalItems: itemNames.filter(function (name) { return name !== ""; }).length,
+      criticalItems: criticalItems,
+      outOfStock: outOfStock,
+      overstock: overstock
+    },
+    locations: locationSummaries,
+    attentionItems: attentionItems.slice(0, 5),
+    inventory: inventory
+  };
+}
+
+/**
+ * Converts a spreadsheet value into a number.
+ * Empty or non-numeric cells return null.
+ */
+function toNumberOrNull_(value) {
+  if (value === "" || value === null || typeof value === "undefined") {
+    return null;
+  }
+
+  if (typeof value === "number") {
+    return isFinite(value) ? value : null;
+  }
+
+  const normalized = String(value).trim().replace(/,/g, "");
+  if (normalized === "") return null;
+
+  const number = Number(normalized);
+  return isFinite(number) ? number : null;
+}
+
+/**
+ * Assigns a simple stock status.
+ * The 20% critical threshold is a starter rule and can be changed later.
+ */
+function getStockStatus_(current, maximum) {
+  if (current === null) return "Quantity missing";
+  if (current <= 0) return "Out of stock";
+  if (maximum !== null && maximum > 0 && current > maximum) {
+    return "Over maximum";
+  }
+  if (maximum !== null && maximum > 0 && current / maximum <= 0.2) {
+    return "Critical";
+  }
+  return "In stock";
+}
+
+/**
+ * Optional manual test.
+ * Run this from the Apps Script editor to check that the data can be read.
+ * It writes the result to the execution log only; it does not edit the sheet.
+ */
+function testStoreDashboardConnection() {
+  const result = getStoreDashboardData();
+  console.log(JSON.stringify({
+    spreadsheetName: result.spreadsheetName,
+    summary: result.summary,
+    locations: result.locations,
+    attentionItems: result.attentionItems
+  }, null, 2));
+}
+
+
+/**
+ * Returns the stock items for one location.
+ * This is read-only: it does not change any spreadsheet cells.
+ *
+ * Accepted location names: ED, Clinic, OT, Ward, Paed.
+ */
+function getStoreInventory(locationName) {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+
+  if (!ss) {
+    throw new Error(
+      "No spreadsheet is connected. Open Apps Script from your ORTH-STORE spreadsheet."
+    );
+  }
+
+  const config = ORTH_STORE_CONFIG;
+  const requestedLocation = String(locationName || "ED").trim().toLowerCase();
+  const location = config.locations.find(function (item) {
+    return item.name.toLowerCase() === requestedLocation;
+  });
+
+  if (!location) {
+    throw new Error("Unknown location: " + locationName);
+  }
+
+  const allSheet = ss.getSheetByName(config.itemSheetName);
+  const locationSheet = ss.getSheetByName(location.sheetName);
+
+  if (!allSheet) {
+    throw new Error('Could not find the "' + config.itemSheetName + '" sheet.');
+  }
+  if (!locationSheet) {
+    throw new Error('Could not find the "' + location.sheetName + '" sheet.');
+  }
+
+  const itemNames = allSheet
+    .getRange(config.itemRange)
+    .getDisplayValues()
+    .map(function (row) {
+      return String(row[0] || "").trim();
+    });
+
+  const rowCount = config.lastDataRow - config.firstDataRow + 1;
+  const rows = locationSheet.getRange(
+    config.firstDataRow,
+    1,
+    rowCount,
+    config.maximumQuantityColumn
+  ).getValues();
+
+  const items = [];
+
+  rows.forEach(function (row, index) {
+    const name = itemNames[index] || String(row[config.itemColumn - 1] || "").trim();
+    if (!name) return;
+
+    const current = toNumberOrNull_(row[config.currentQuantityColumn - 1]);
+    const maximum = toNumberOrNull_(row[config.maximumQuantityColumn - 1]);
+
+    items.push({
+      name: name,
+      location: location.name,
+      currentQuantity: current,
+      maximumQuantity: maximum,
+      status: getStockStatus_(current, maximum),
+      capacityPercent: current !== null && maximum !== null && maximum > 0
+        ? Math.round((current / maximum) * 100)
+        : null
+    });
+  });
+
+  return {
+    success: true,
+    location: location.name,
+    sheetName: location.sheetName,
+    items: items
+  };
+}
+
+
+/**
+ * Updates the current stock quantity for one item at one location.
+ * Only column C on the selected location sheet is changed.
+ * The item master, maximum quantity, monthly records and usage scripts are untouched.
+ */
+function updateStoreCurrentQuantity(locationName, itemName, newQuantity) {
+  const lock = LockService.getDocumentLock();
+  if (!lock) throw new Error("Could not obtain the spreadsheet lock. Please try again.");
+  lock.waitLock(30000);
+  try {
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    if (!ss) throw new Error("No spreadsheet is connected.");
+
+    const config = ORTH_STORE_CONFIG;
+    const requestedLocation = String(locationName || "").trim().toLowerCase();
+    const location = config.locations.find(function (entry) {
+      return entry.name.toLowerCase() === requestedLocation || entry.sheetName.toLowerCase() === requestedLocation;
+    });
+    if (!location) throw new Error("Unknown location: " + locationName);
+
+    const name = String(itemName || "").trim();
+    if (!name) throw new Error("Please select an item.");
+    const quantity = toNumberOrNull_(newQuantity);
+    if (quantity === null || quantity < 0) throw new Error("Enter a valid quantity of zero or more.");
+    if (quantity > 1000000000) throw new Error("The quantity is too large. Please check the value.");
+
+    const sheet = ss.getSheetByName(location.sheetName);
+    if (!sheet) throw new Error('Could not find the "' + location.sheetName + '" sheet.');
+    const row = findUniqueSheetItemRow_(sheet, name, config.firstDataRow, config.lastDataRow);
+    const cell = sheet.getRange(row, config.currentQuantityColumn);
+    const oldValue = cell.getValue();
+    cell.setValue(quantity);
+    SpreadsheetApp.flush();
+
+    const maximum = toNumberOrNull_(sheet.getRange(row, config.maximumQuantityColumn).getValue());
+    return {
+      success: true,
+      message: "Updated " + name + " at " + location.name + ".",
+      item: name,
+      location: location.name,
+      currentQuantity: quantity,
+      maximumQuantity: maximum,
+      capacityPercent: maximum !== null && maximum > 0 ? Math.round((quantity / maximum) * 100) : null,
+      status: getStockStatus_(quantity, maximum),
+      previousQuantity: toNumberOrNull_(oldValue)
+    };
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+/**
+ * Returns each item with current and maximum quantities for ALL locations.
+ * Read-only: this function does not edit any spreadsheet cells.
+ */
+function getStoreAllInventory() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+
+  if (!ss) {
+    throw new Error(
+      "No spreadsheet is connected. Open Apps Script from your ORTH-STORE spreadsheet."
+    );
+  }
+
+  const config = ORTH_STORE_CONFIG;
+  const allSheet = ss.getSheetByName(config.itemSheetName);
+
+  if (!allSheet) {
+    throw new Error('Could not find the "' + config.itemSheetName + '" sheet.');
+  }
+
+  // Use the same row position in ALL and each location sheet.
+  const itemNames = allSheet
+    .getRange(config.itemRange)
+    .getDisplayValues()
+    .map(function (row) {
+      return String(row[0] || "").trim();
+    });
+
+  const rowCount = config.lastDataRow - config.firstDataRow + 1;
+  const items = itemNames.map(function (itemName, index) {
+    return {
+      name: itemName,
+      row: config.firstDataRow + index,
+      locations: {}
+    };
+  }).filter(function (item) {
+    return item.name !== "";
+  });
+
+  config.locations.forEach(function (location) {
+    const sheet = ss.getSheetByName(location.sheetName);
+
+    if (!sheet) {
+      throw new Error(
+        'Could not find the sheet "' + location.sheetName +
+        '" for location "' + location.name + '".'
+      );
+    }
+
+    // Read A:D together, just like the individual-location function.
+    const rows = sheet.getRange(
+      config.firstDataRow,
+      1,
+      rowCount,
+      config.maximumQuantityColumn
+    ).getValues();
+
+    rows.forEach(function (row, index) {
+      const itemName = itemNames[index] || String(row[config.itemColumn - 1] || "").trim();
+      if (!itemName) return;
+
+      const current = toNumberOrNull_(row[config.currentQuantityColumn - 1]);
+      const maximum = toNumberOrNull_(row[config.maximumQuantityColumn - 1]);
+
+      const stock = {
+        currentQuantity: current,
+        maximumQuantity: maximum,
+        status: getStockStatus_(current, maximum),
+        capacityPercent: current !== null && maximum !== null && maximum > 0
+          ? Math.round((current / maximum) * 100)
+          : null
+      };
+
+      // Match the row position rather than matching item text.
+      const target = items.find(function (item) {
+        return item.row === config.firstDataRow + index;
+      });
+
+      if (target) {
+        target.locations[location.name] = stock;
+
+        // Also provide the original tab names as aliases, to make the
+        // display resilient if the interface uses the sheet tab names.
+        target.locations[location.sheetName] = stock;
+      }
+    });
+  });
+
+  items.forEach(function (item) {
+    delete item.row;
+  });
+
+  return {
+    success: true,
+    updatedAt: new Date().toISOString(),
+    locationNames: config.locations.map(function (location) {
+      return location.name;
+    }),
+    items: items
+  };
+}
+
+
+/**
+ * Provides the Incoming Stock form options and the month that will be updated.
+ * Month lookup uses the actual date values in Record row 1, not the displayed
+ * month labels. The matching column is expected to align with New Stock.
+ */
+function getIncomingStockFormData() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  if (!ss) throw new Error("No spreadsheet is connected to ORTH-STORE.");
+
+  const config = ORTH_STORE_CONFIG;
+  const allSheet = ss.getSheetByName(config.itemSheetName);
+  const recordSheet = ss.getSheetByName("Record");
+  const newStockSheet = ss.getSheetByName("New Stock");
+  if (!allSheet) throw new Error('Could not find the "ALL" sheet.');
+  if (!recordSheet) throw new Error('Could not find the "Record" sheet.');
+  if (!newStockSheet) throw new Error('Could not find the "New Stock" sheet.');
+
+  const items = allSheet.getRange(config.itemRange).getDisplayValues()
+    .map(function (row) { return String(row[0] || "").trim(); })
+    .filter(function (name) { return name !== ""; });
+
+  let monthInfo = null;
+  let monthError = "";
+  try {
+    monthInfo = getIncomingStockMonthColumn_(recordSheet, newStockSheet);
+  } catch (error) {
+    // Keep the item dropdown usable even if the monthly target is not ready.
+    // Submission still validates the month again and safely refuses to write.
+    monthError = error && error.message ? error.message : String(error);
+  }
+  return {
+    success: true,
+    items: items,
+    locations: config.locations.map(function (location) { return location.name; }),
+    monthLabel: monthInfo ? monthInfo.label : "Unavailable",
+    monthColumn: monthInfo ? monthInfo.column : null,
+    monthKey: monthInfo ? monthInfo.key : null,
+    monthError: monthError
+  };
+}
+
+/**
+ * Records received stock in two places:
+ * 1. Adds the quantity to the matching month in New Stock.
+ * 2. Adds the quantity to the destination location's current quantity (col C).
+ * Record is not written directly; its existing formulas continue to work.
+ */
+function submitIncomingStock(form) {
+  const lock = LockService.getDocumentLock();
+  if (!lock) throw new Error("Could not obtain the spreadsheet lock. Please try again.");
+  lock.waitLock(30000);
+
+  try {
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    if (!ss) throw new Error("No spreadsheet is connected to ORTH-STORE.");
+
+    form = form || {};
+    const itemName = String(form.itemName || "").trim();
+    const locationName = String(form.locationName || "").trim();
+    const quantityText = String(form.quantity == null ? "" : form.quantity).trim();
+    const multiplierText = String(form.multiplier == null ? "1" : form.multiplier).trim();
+    const remarks = String(form.remarks || "").trim();
+    const packageQuantity = Number(quantityText);
+    const multiplier = Number(multiplierText);
+    const quantity = packageQuantity * multiplier;
+
+    if (!itemName) throw new Error("Please select an item.");
+    if (!locationName) throw new Error("Please select the destination location.");
+    if (!quantityText || !Number.isFinite(packageQuantity) || packageQuantity <= 0) {
+      throw new Error("Quantity received must be a number greater than zero.");
+    }
+    if (!multiplierText || !Number.isFinite(multiplier) || multiplier <= 0) {
+      throw new Error("Multiplier must be a number greater than zero.");
+    }
+    if (packageQuantity > 1000000000 || multiplier > 1000000000 || !Number.isFinite(quantity) || quantity > 1000000000) {
+      throw new Error("That quantity or multiplier is unusually large. Please check it.");
+    }
+
+    const config = ORTH_STORE_CONFIG;
+    const location = config.locations.find(function (entry) {
+      return entry.name.toLowerCase() === locationName.toLowerCase();
+    });
+    if (!location) throw new Error("Unknown destination location: " + locationName);
+
+    const allSheet = ss.getSheetByName(config.itemSheetName);
+    const newStockSheet = ss.getSheetByName("New Stock");
+    const recordSheet = ss.getSheetByName("Record");
+    const locationSheet = ss.getSheetByName(location.sheetName);
+    if (!allSheet) throw new Error('Could not find the "ALL" sheet.');
+    if (!newStockSheet) throw new Error('Could not find the "New Stock" sheet.');
+    if (!recordSheet) throw new Error('Could not find the "Record" sheet.');
+    if (!locationSheet) throw new Error('Could not find the location sheet "' + location.sheetName + '".');
+
+    // Confirm the item exists in ALL and find unique matching rows in the target sheets.
+    const allNames = allSheet.getRange(config.itemRange).getDisplayValues()
+      .map(function (row) { return String(row[0] || "").trim(); });
+    const allMatches = findUniqueNameRow_(allNames, itemName, config.firstDataRow);
+    if (allMatches == null) throw new Error('Item "' + itemName + '" was not found in ALL.');
+
+    const newStockRow = findUniqueSheetItemRow_(newStockSheet, itemName, config.firstDataRow, config.lastDataRow);
+    const locationRow = findUniqueSheetItemRow_(locationSheet, itemName, config.firstDataRow, config.lastDataRow);
+    const monthInfo = getIncomingStockMonthColumn_(recordSheet, newStockSheet);
+
+    const incomingCell = newStockSheet.getRange(newStockRow, monthInfo.column);
+    const currentCell = locationSheet.getRange(locationRow, config.currentQuantityColumn);
+    const oldIncomingRaw = incomingCell.getValue();
+    const oldCurrentRaw = currentCell.getValue();
+    const oldIncoming = incomingRawToNumber_(oldIncomingRaw, "New Stock " + incomingCell.getA1Notation());
+    const oldCurrent = incomingRawToNumber_(oldCurrentRaw, location.name + " " + currentCell.getA1Notation());
+    const newIncoming = oldIncoming + quantity;
+    const newCurrent = oldCurrent + quantity;
+
+    // Keep the stock cells and the transaction log consistent where possible.
+    // The log is created automatically on the first receipt.
+    const logSheet = getOrCreateIncomingLogSheet_(ss);
+    const logRow = logSheet.getLastRow() + 1;
+    incomingCell.setValue(newIncoming);
+    try {
+      currentCell.setValue(newCurrent);
+      ensureIncomingLogHeaders_(logSheet);
+      logSheet.getRange(logRow, 1, 1, 11).setValues([[
+        new Date(), itemName, location.name, packageQuantity, multiplier, quantity,
+        monthInfo.label, remarks, oldCurrent, newCurrent, oldIncoming
+      ]]);
+    } catch (writeError) {
+      try { currentCell.setValue(oldCurrentRaw === "" ? "" : oldCurrentRaw); } catch (ignoredCurrentRollback) {}
+      try { incomingCell.setValue(oldIncomingRaw === "" ? "" : oldIncomingRaw); } catch (ignoredIncomingRollback) {}
+      try { if (logSheet.getLastRow() >= logRow) logSheet.deleteRow(logRow); } catch (ignoredLogRollback) {}
+      throw writeError;
+    }
+
+    SpreadsheetApp.flush();
+    return {
+      success: true,
+      itemName: itemName,
+      locationName: location.name,
+      packageQuantityReceived: packageQuantity,
+      multiplier: multiplier,
+      quantityReceived: quantity,
+      previousIncoming: oldIncoming,
+      newIncoming: newIncoming,
+      previousCurrent: oldCurrent,
+      newCurrent: newCurrent,
+      monthLabel: monthInfo.label,
+      remarks: remarks,
+      message: "Received " + packageQuantity + " × " + multiplier + " = " + quantity + " stock units of " + itemName + " into " + location.name + "."
+    };
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+/** Finds the unique month column in Record row 1 for the current Malaysia month. */
+function getIncomingStockMonthColumn_(recordSheet, newStockSheet) {
+  const timezone = "Asia/Kuala_Lumpur";
+  const now = new Date();
+  const currentKey = Utilities.formatDate(now, timezone, "yyyy-MM");
+  const lastColumn = Math.max(recordSheet.getLastColumn(), newStockSheet.getLastColumn());
+  if (lastColumn < 2) throw new Error("Record row 1 has no monthly columns yet.");
+
+  const dates = recordSheet.getRange(1, 1, 1, lastColumn).getValues()[0];
+  const matches = [];
+  dates.forEach(function (value, index) {
+    if (value instanceof Date && !isNaN(value.getTime())) {
+      const key = Utilities.formatDate(value, timezone, "yyyy-MM");
+      if (key === currentKey) matches.push({ column: index + 1, date: value });
+    }
+  });
+
+  if (matches.length === 0) {
+    throw new Error("No column in Record row 1 matches " + currentKey + ". No stock was changed. Add/select the monthly date column first.");
+  }
+  if (matches.length > 1) {
+    throw new Error("More than one Record row 1 date matches " + currentKey + ". No stock was changed; please resolve the duplicate month columns first.");
+  }
+
+  const match = matches[0];
+  if (match.column > newStockSheet.getMaxColumns()) {
+    throw new Error("The matching month column exists in Record but not in New Stock. No stock was changed.");
+  }
+  return {
+    column: match.column,
+    key: currentKey,
+    label: Utilities.formatDate(match.date, timezone, "MMMM yyyy")
+  };
+}
+
+function findUniqueNameRow_(names, targetName, firstRow) {
+  const target = normalizeStockItemName_(targetName);
+  const matches = [];
+  names.forEach(function (name, index) {
+    if (normalizeStockItemName_(name) === target) matches.push(firstRow + index);
+  });
+  if (matches.length > 1) throw new Error('The item name "' + targetName + '" appears more than once. No stock was changed.');
+  return matches.length ? matches[0] : null;
+}
+
+function findUniqueSheetItemRow_(sheet, targetName, firstRow, lastRow) {
+  const names = sheet.getRange(firstRow, 1, lastRow - firstRow + 1, 1).getDisplayValues()
+    .map(function (row) { return String(row[0] || "").trim(); });
+  const row = findUniqueNameRow_(names, targetName, firstRow);
+  if (row == null) throw new Error('Item "' + targetName + '" was not found in column A of "' + sheet.getName() + '". No stock was changed.');
+  return row;
+}
+
+function normalizeStockItemName_(value) {
+  return String(value == null ? "" : value).trim().replace(/\s+/g, " ").toLowerCase();
+}
+
+function incomingRawToNumber_(value, cellLabel) {
+  if (value === "" || value === null) return 0;
+  const number = toNumberOrNull_(value);
+  if (number === null) throw new Error(cellLabel + " contains a non-numeric value. No stock was changed.");
+  return number;
+}
+
+
+/** Creates an Incoming Log sheet on first use and returns it. */
+function getOrCreateIncomingLogSheet_(ss) {
+  let sheet = ss.getSheetByName("Incoming Log");
+  if (!sheet) sheet = ss.insertSheet("Incoming Log");
+  ensureIncomingLogHeaders_(sheet);
+  return sheet;
+}
+
+function ensureIncomingLogHeaders_(sheet) {
+  const headers = [
+    "Timestamp", "Item", "Destination", "Packages / Quantity",
+    "Multiplier", "Stock Units Added", "Monthly Record", "Remarks",
+    "Previous Location Quantity", "New Location Quantity", "Previous Monthly Incoming"
+  ];
+  sheet.getRange(1, 1, 1, headers.length).setValues([headers]);
+  sheet.setFrozenRows(1);
+}
+
+
+/**
+ * Added Stock History reads directly from New Stock.
+ * Row 1 contains actual month dates; column A contains item names.
+ * Each non-empty quantity cell becomes one history entry, sorted oldest month first.
+ * This function is read-only and does not modify New Stock, Record, or monthly automation.
+ */
+function getStoreHistoricalRecords() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  if (!ss) throw new Error("No spreadsheet is connected.");
+  const stockSheet = ss.getSheetByName("New Stock");
+  if (!stockSheet) throw new Error('Could not find the "New Stock" sheet.');
+
+  const lastRow = stockSheet.getLastRow();
+  const lastCol = stockSheet.getLastColumn();
+  if (lastRow < 2 || lastCol < 2) {
+    return { incoming: [], months: [], message: "No added-stock history found in New Stock." };
+  }
+
+  const values = stockSheet.getRange(1, 1, lastRow, lastCol).getValues();
+  const displays = stockSheet.getRange(1, 1, lastRow, lastCol).getDisplayValues();
+  const timeZone = "Asia/Kuala_Lumpur";
+  const monthColumns = [];
+  for (let c = 1; c < lastCol; c++) {
+    const dateValue = values[0][c];
+    if (dateValue instanceof Date && !isNaN(dateValue.getTime())) {
+      monthColumns.push({
+        column: c,
+        key: Utilities.formatDate(dateValue, timeZone, "yyyy-MM"),
+        label: Utilities.formatDate(dateValue, timeZone, "MMMM yyyy"),
+        date: new Date(dateValue.getFullYear(), dateValue.getMonth(), dateValue.getDate()).getTime()
+      });
+    }
+  }
+
+  const incoming = [];
+  for (let r = 1; r < lastRow; r++) {
+    const item = String(displays[r][0] || "").trim();
+    if (!item) continue;
+    monthColumns.forEach(function(month) {
+      const raw = values[r][month.column];
+      // Only record cells that actually contain a value; blank cells are ignored.
+      if (raw === "" || raw === null || typeof raw === "undefined") return;
+      const numeric = toNumberOrNull_(raw);
+      // Only positive quantities represent stock that was added.
+      if (numeric === null || numeric <= 0) return;
+      incoming.push({
+        item: item,
+        month: month.label,
+        monthKey: month.key,
+        dateSort: month.date,
+        value: numeric,
+        displayValue: String(displays[r][month.column] || raw)
+      });
+    });
+  }
+
+  incoming.sort(function(a, b) {
+    // Latest month first, then item name alphabetically.
+    return b.dateSort - a.dateSort || a.item.localeCompare(b.item);
+  });
+  incoming.forEach(function(record) { delete record.dateSort; });
+
+  return {
+    incoming: incoming,
+    months: monthColumns.map(function(month) { return { key: month.key, label: month.label }; }),
+    message: "Added Stock History read directly from New Stock. No spreadsheet data was changed."
+  };
+}
+
+/**
+ * Returns the latest incoming stock transactions for the Records page.
+ * Reads only; does not change stock or the monthly workflow.
+ */
+function getIncomingStockRecords(limit) {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  if (!ss) throw new Error("No spreadsheet is connected.");
+  const sheet = ss.getSheetByName("Incoming Log");
+  if (!sheet || sheet.getLastRow() < 2) {
+    return { records: [], total: 0, message: "No incoming stock transactions have been recorded yet." };
+  }
+  const lastRow = sheet.getLastRow();
+  const safeLimit = Math.min(500, Math.max(1, Math.floor(Number(limit) || 100)));
+  const startRow = Math.max(2, lastRow - safeLimit + 1);
+  const values = sheet.getRange(startRow, 1, lastRow - startRow + 1, 11).getValues();
+  const records = values.map(function(row, index) {
+    const logRow = startRow + index;
+    const stamp = row[0] instanceof Date ? row[0] : (row[0] ? new Date(row[0]) : null);
+    return {
+      logRow: logRow,
+      timestamp: stamp && !isNaN(stamp.getTime()) ? Utilities.formatDate(stamp, "Asia/Kuala_Lumpur", "dd MMM yyyy, HH:mm") : String(row[0] || "—"),
+      item: String(row[1] || "—"),
+      destination: String(row[2] || "—"),
+      packageQuantity: row[3] === "" || row[3] == null ? "—" : row[3],
+      multiplier: row[4] === "" || row[4] == null ? "—" : row[4],
+      stockUnitsAdded: row[5] === "" || row[5] == null ? "—" : row[5],
+      monthlyRecord: String(row[6] || "—"),
+      remarks: String(row[7] || ""),
+      newLocationQuantity: row[9] === "" || row[9] == null ? "—" : row[9]
+    };
+  }).reverse();
+  return { records: records, total: lastRow - 1, message: "Showing the latest " + records.length + " of " + (lastRow - 1) + " incoming transactions." };
+}
+
+/**
+ * Deletes a mistaken Incoming Log transaction and reverses its stock effects.
+ * It subtracts the receipt quantity from the destination's current quantity and
+ * from the matching New Stock month. It refuses to proceed if either quantity
+ * cannot safely be reversed. usage by month.gs is not touched.
+ */
+function deleteIncomingStockRecord(logRow) {
+  const lock = LockService.getDocumentLock();
+  if (!lock) throw new Error("Could not obtain the spreadsheet lock. Please try again.");
+  lock.waitLock(30000);
+  try {
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    const logSheet = ss && ss.getSheetByName("Incoming Log");
+    if (!ss || !logSheet) throw new Error('The "Incoming Log" sheet was not found.');
+    const rowNumber = Number(logRow);
+    if (!Number.isInteger(rowNumber) || rowNumber < 2 || rowNumber > logSheet.getLastRow()) {
+      throw new Error("This transaction is no longer available. Refresh the log and try again.");
+    }
+
+    const row = logSheet.getRange(rowNumber, 1, 1, 11).getValues()[0];
+    const timestamp = row[0] instanceof Date ? row[0] : (row[0] ? new Date(row[0]) : null);
+    const itemName = String(row[1] || "").trim();
+    const locationName = String(row[2] || "").trim();
+    const units = toNumberOrNull_(row[5]);
+    if (!timestamp || isNaN(timestamp.getTime()) || !itemName || !locationName || units === null || units <= 0) {
+      throw new Error("This log entry is missing required information. No data was changed.");
+    }
+
+    const config = ORTH_STORE_CONFIG;
+    const location = config.locations.find(function(entry) { return entry.name.toLowerCase() === locationName.toLowerCase(); });
+    if (!location) throw new Error('Unknown destination "' + locationName + '". No data was changed.');
+    const locationSheet = ss.getSheetByName(location.sheetName);
+    const newStockSheet = ss.getSheetByName("New Stock");
+    if (!locationSheet || !newStockSheet) throw new Error("A required stock sheet could not be found.");
+
+    const locationRow = findUniqueSheetItemRow_(locationSheet, itemName, config.firstDataRow, config.lastDataRow);
+    const stockRow = findUniqueSheetItemRow_(newStockSheet, itemName, config.firstDataRow, config.lastDataRow);
+    const timezone = "Asia/Kuala_Lumpur";
+    const transactionMonth = Utilities.formatDate(timestamp, timezone, "yyyy-MM");
+    const lastCol = newStockSheet.getLastColumn();
+    const monthDates = newStockSheet.getRange(1, 1, 1, lastCol).getValues()[0];
+    const monthMatches = [];
+    monthDates.forEach(function(value, index) {
+      if (index === 0 || !(value instanceof Date) || isNaN(value.getTime())) return;
+      if (Utilities.formatDate(value, timezone, "yyyy-MM") === transactionMonth) monthMatches.push(index + 1);
+    });
+    if (monthMatches.length !== 1) {
+      throw new Error("Could not uniquely identify the original New Stock month for this transaction. No data was changed.");
+    }
+
+    const currentCell = locationSheet.getRange(locationRow, config.currentQuantityColumn);
+    const incomingCell = newStockSheet.getRange(stockRow, monthMatches[0]);
+    const oldCurrentRaw = currentCell.getValue();
+    const oldIncomingRaw = incomingCell.getValue();
+    const oldCurrent = incomingRawToNumber_(oldCurrentRaw, location.name + " " + currentCell.getA1Notation());
+    const oldIncoming = incomingRawToNumber_(oldIncomingRaw, "New Stock " + incomingCell.getA1Notation());
+    const tolerance = 0.0000001;
+    if (oldCurrent + tolerance < units) {
+      throw new Error("The destination's current quantity is lower than this receipt. To prevent incorrect stock totals, no data was changed.");
+    }
+    if (oldIncoming + tolerance < units) {
+      throw new Error("New Stock's monthly total is lower than this receipt. To prevent incorrect history, no data was changed.");
+    }
+
+    const newCurrent = Math.abs(oldCurrent - units) < tolerance ? 0 : oldCurrent - units;
+    const newIncoming = Math.abs(oldIncoming - units) < tolerance ? 0 : oldIncoming - units;
+    currentCell.setValue(newCurrent);
+    try {
+      incomingCell.setValue(newIncoming);
+      logSheet.deleteRow(rowNumber);
+      SpreadsheetApp.flush();
+    } catch (error) {
+      try { currentCell.setValue(oldCurrentRaw === "" ? "" : oldCurrentRaw); } catch (ignoredCurrent) {}
+      try { incomingCell.setValue(oldIncomingRaw === "" ? "" : oldIncomingRaw); } catch (ignoredIncoming) {}
+      throw error;
+    }
+    return { success: true, message: "Deleted the transaction and reversed " + units + " stock units from " + location.name + " and New Stock." };
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+
+/**
+ * Read-only analytics data for the ORTH-STORE Analytics page.
+ * Uses current stock quantities from the five location sheets and monthly
+ * additions from New Stock. Does not calculate or modify monthly usage.
+ */
+function getStoreAnalyticsData() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  if (!ss) throw new Error("No spreadsheet is connected.");
+
+  const inventoryResult = getStoreAllInventory();
+  const locationNames = inventoryResult.locationNames || [];
+  const items = inventoryResult.items || [];
+  const locationStats = locationNames.map(function(locationName) {
+    let tracked = 0, out = 0, critical = 0, over = 0, totalCurrent = 0, knownCurrent = 0;
+    items.forEach(function(item) {
+      const stock = item.locations[locationName];
+      if (!stock) return;
+      tracked++;
+      if (stock.status === "Out of stock") out++;
+      if (stock.status === "Critical") critical++;
+      if (stock.status === "Over maximum") over++;
+      if (stock.currentQuantity !== null && stock.currentQuantity !== undefined) {
+        totalCurrent += Number(stock.currentQuantity) || 0;
+        knownCurrent++;
+      }
+    });
+    return { location: locationName, tracked: tracked, outOfStock: out, critical: critical,
+      overMaximum: over, currentUnits: totalCurrent, knownQuantities: knownCurrent };
+  });
+
+  let trackedLocationItems = 0, outOfStockTotal = 0, criticalTotal = 0, overMaximumTotal = 0;
+  locationStats.forEach(function(stat) {
+    trackedLocationItems += stat.tracked;
+    outOfStockTotal += stat.outOfStock;
+    criticalTotal += stat.critical;
+    overMaximumTotal += stat.overMaximum;
+  });
+
+  const stockSheet = ss.getSheetByName("New Stock");
+  const monthlyAdded = [];
+  if (stockSheet && stockSheet.getLastRow() >= 2 && stockSheet.getLastColumn() >= 2) {
+    const lastRow = stockSheet.getLastRow();
+    const lastCol = stockSheet.getLastColumn();
+    const values = stockSheet.getRange(1, 1, lastRow, lastCol).getValues();
+    const tz = "Asia/Kuala_Lumpur";
+    for (let c = 1; c < lastCol; c++) {
+      const dateValue = values[0][c];
+      if (!(dateValue instanceof Date) || isNaN(dateValue.getTime())) continue;
+      let total = 0;
+      for (let r = 1; r < lastRow; r++) {
+        const raw = values[r][c];
+        if (raw === "" || raw === null || typeof raw === "undefined") continue;
+        const number = toNumberOrNull_(raw);
+        if (number !== null && number > 0) total += number;
+      }
+      monthlyAdded.push({
+        key: Utilities.formatDate(dateValue, tz, "yyyy-MM"),
+        month: Utilities.formatDate(dateValue, tz, "MMM yyyy"),
+        total: total,
+        sort: new Date(dateValue.getFullYear(), dateValue.getMonth(), 1).getTime()
+      });
+    }
+  }
+  monthlyAdded.sort(function(a, b) { return a.sort - b.sort; });
+  monthlyAdded.forEach(function(month) { delete month.sort; });
+
+  return {
+    success: true,
+    updatedAt: new Date().toISOString(),
+    summary: {
+      itemTypes: items.length,
+      locationItemRecords: trackedLocationItems,
+      outOfStock: outOfStockTotal,
+      critical: criticalTotal,
+      overMaximum: overMaximumTotal
+    },
+    locations: locationStats,
+    monthlyAdded: monthlyAdded
+  };
+}
