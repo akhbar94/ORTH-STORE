@@ -1,0 +1,2460 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <base target="_top">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ORTH-STORE</title>
+  <style>
+    :root {
+      --bg: #f5f7fb;
+      --card: #ffffff;
+      --text: #172033;
+      --muted: #697386;
+      --line: #e6eaf1;
+      --blue: #2878d0;
+      --blue-soft: #eaf3ff;
+      --red: #d64545;
+      --orange: #d97706;
+      --green: #16845b;
+      --purple: #7856c9;
+      --teal: #078b91;
+      --shadow: 0 6px 22px rgba(28, 43, 68, 0.06);
+      --radius: 18px;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: Arial, Helvetica, sans-serif;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    button, input { font: inherit; }
+    button { cursor: pointer; }
+
+    .app-shell {
+      width: 100%;
+      max-width: 1120px;
+      min-height: 100vh;
+      margin: 0 auto;
+      padding: 18px 16px 100px;
+    }
+
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 22px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 11px;
+      min-width: 0;
+    }
+
+    .brand-mark {
+      display: grid;
+      place-items: center;
+      width: 46px;
+      height: 46px;
+      flex: 0 0 46px;
+      border-radius: 15px;
+      background: linear-gradient(135deg, #2878d0, #35b9c2);
+      color: white;
+      font-size: 23px;
+      box-shadow: 0 7px 16px rgba(40, 120, 208, .2);
+    }
+
+    .brand h1 {
+      margin: 0;
+      font-size: 21px;
+      letter-spacing: .4px;
+    }
+
+    .brand p {
+      margin: 4px 0 0;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .refresh-button {
+      border: 1px solid var(--line);
+      background: white;
+      color: var(--text);
+      border-radius: 12px;
+      padding: 10px 13px;
+      font-weight: 700;
+      box-shadow: var(--shadow);
+      white-space: nowrap;
+    }
+
+    .welcome {
+      padding: 23px;
+      border-radius: 22px;
+      background: linear-gradient(120deg, #e9f4ff 0%, #e9fbf8 100%);
+      border: 1px solid #dcecf5;
+      margin-bottom: 22px;
+    }
+
+    .welcome .eyebrow {
+      margin: 0 0 7px;
+      color: var(--blue);
+      text-transform: uppercase;
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 1.2px;
+    }
+
+    .welcome h2 {
+      margin: 0;
+      font-size: clamp(23px, 5vw, 31px);
+      line-height: 1.2;
+    }
+
+    .welcome .subtext {
+      margin: 9px 0 0;
+      color: #536579;
+      font-size: 14px;
+      line-height: 1.5;
+    }
+
+    .section {
+      margin-top: 25px;
+    }
+
+    .section-heading {
+      display: flex;
+      align-items: end;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+
+    .section-heading h2 {
+      margin: 0;
+      font-size: 18px;
+    }
+
+    .section-heading p {
+      margin: 5px 0 0;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .small-link {
+      border: 0;
+      padding: 5px 0;
+      background: transparent;
+      color: var(--blue);
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .stat-card {
+      min-width: 0;
+      padding: 16px;
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+    }
+
+    .stat-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+
+    .stat-icon {
+      display: grid;
+      place-items: center;
+      width: 36px;
+      height: 36px;
+      border-radius: 12px;
+      font-size: 18px;
+    }
+
+    .stat-card .label {
+      margin: 13px 0 4px;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.35;
+    }
+
+    .stat-card .number {
+      font-size: 28px;
+      font-weight: 800;
+      line-height: 1.1;
+    }
+
+    .stat-card .note {
+      margin-top: 7px;
+      color: var(--muted);
+      font-size: 11px;
+    }
+
+    .tone-blue .stat-icon { color: var(--blue); background: var(--blue-soft); }
+    .tone-red .stat-icon { color: var(--red); background: #fff0f0; }
+    .tone-orange .stat-icon { color: var(--orange); background: #fff5e7; }
+    .tone-purple .stat-icon { color: var(--purple); background: #f2edff; }
+
+    .location-grid {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .location-card {
+      position: relative;
+      overflow: hidden;
+      text-align: left;
+      width: 100%;
+      padding: 16px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: white;
+      box-shadow: var(--shadow);
+      color: var(--text);
+      transition: transform .15s ease, box-shadow .15s ease;
+    }
+
+    .location-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 24px rgba(28, 43, 68, .1);
+    }
+
+    .location-card::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 5px;
+      background: var(--location-color);
+    }
+
+    .location-icon {
+      display: grid;
+      place-items: center;
+      width: 40px;
+      height: 40px;
+      margin-bottom: 12px;
+      border-radius: 13px;
+      background: var(--location-soft);
+      font-size: 20px;
+    }
+
+    .location-card h3 {
+      margin: 0;
+      font-size: 16px;
+    }
+
+    .location-card .location-description {
+      margin: 5px 0 13px;
+      min-height: 28px;
+      color: var(--muted);
+      font-size: 11px;
+      line-height: 1.35;
+    }
+
+    .location-status {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+      font-size: 11px;
+      color: var(--muted);
+    }
+
+    .location-status strong {
+      color: var(--text);
+      font-size: 12px;
+    }
+
+    .location-ed { --location-color: #2878d0; --location-soft: #eaf3ff; }
+    .location-clinic { --location-color: #16845b; --location-soft: #e8f8f0; }
+    .location-ot { --location-color: #7856c9; --location-soft: #f2edff; }
+    .location-ward { --location-color: #d97706; --location-soft: #fff5e7; }
+    .location-paed { --location-color: #078b91; --location-soft: #e6f8f8; }
+
+
+    .inventory-toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+
+    .location-tabs {
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+      padding: 2px 1px 8px;
+      margin-bottom: 12px;
+      scrollbar-width: thin;
+    }
+
+    .location-tab {
+      flex: 0 0 auto;
+      padding: 10px 15px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: white;
+      color: var(--text);
+      font-weight: 700;
+      font-size: 13px;
+    }
+
+    .location-tab.active {
+      background: var(--blue);
+      color: white;
+      border-color: var(--blue);
+    }
+
+    .inventory-search {
+      flex: 1 1 200px;
+      min-width: 0;
+      width: 100%;
+      padding: 12px 14px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      outline: none;
+      background: white;
+    }
+
+    .inventory-search:focus {
+      border-color: var(--blue);
+      box-shadow: 0 0 0 3px rgba(40,120,208,.12);
+    }
+
+    .view-toggle {
+      display: flex;
+      gap: 4px;
+      padding: 4px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: white;
+    }
+
+    .view-toggle button {
+      padding: 8px 11px;
+      border: 0;
+      border-radius: 8px;
+      background: transparent;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .view-toggle button.active {
+      background: var(--blue-soft);
+      color: var(--blue);
+    }
+
+    .inventory-summary {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      margin: 3px 0 13px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .inventory-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px;
+    }
+
+    .inventory-card {
+      min-width: 0;
+      padding: 10px 11px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: white;
+      box-shadow: 0 2px 7px rgba(24, 39, 75, .045);
+    }
+
+    .inventory-card-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 9px;
+    }
+
+    .inventory-card h3 {
+      margin: 0;
+      font-size: 14px;
+      line-height: 1.4;
+      overflow-wrap: anywhere;
+    }
+
+    .stock-badge {
+      flex: 0 0 auto;
+      padding: 5px 8px;
+      border-radius: 999px;
+      font-size: 10px;
+      font-weight: 800;
+      white-space: nowrap;
+    }
+
+    .stock-badge.normal { background: #e8f8f0; color: #16845b; }
+    .stock-badge.critical { background: #fff5e7; color: #b45f00; }
+    .stock-badge.empty { background: #fff0f0; color: #d64545; }
+    .stock-badge.over { background: #f2edff; color: #7856c9; }
+    .stock-badge.missing { background: #eef1f5; color: #697386; }
+
+    .inventory-quantities {
+      display: flex;
+      justify-content: space-between;
+      gap: 8px;
+      margin: 8px 0 8px;
+    }
+
+    .quantity-block span {
+      display: block;
+      color: var(--muted);
+      font-size: 11px;
+    }
+
+    .quantity-block strong {
+      display: block;
+      margin-top: 2px;
+      font-size: 17px;
+      line-height: 1.2;
+    }
+
+    .capacity-track {
+      height: 15px;
+      overflow: hidden;
+      border-radius: 999px;
+      background: #edf0f5;
+      box-shadow: inset 0 0 0 1px rgba(30, 45, 70, .035);
+    }
+
+    .capacity-fill {
+      height: 100%;
+      min-width: 0;
+      border-radius: inherit;
+      background: var(--green);
+      transition: width .25s ease;
+    }
+
+    .capacity-fill.critical { background: var(--orange); }
+    .capacity-fill.empty { background: var(--red); }
+    .capacity-fill.over { background: var(--purple); }
+
+    .capacity-caption {
+      display: flex;
+      justify-content: space-between;
+      gap: 8px;
+      margin-top: 4px;
+      color: var(--muted);
+      font-size: 10px;
+      line-height: 1.2;
+    }
+
+    .capacity-caption::after { content: ""; }
+    .inventory-card .inventory-edit-row { margin-top: 5px; }
+    .inventory-card .inventory-edit-input { padding: 5px 7px; }
+    .inventory-card .inventory-save-button { padding: 6px 9px; }
+
+    .inventory-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .inventory-list-row {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 90px 90px minmax(90px, auto);
+      align-items: center;
+      gap: 12px;
+      padding: 13px 14px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: white;
+    }
+
+    .inventory-list-name {
+      min-width: 0;
+      font-size: 13px;
+      font-weight: 700;
+      overflow-wrap: anywhere;
+    }
+
+    .inventory-list-cell span {
+      display: block;
+      color: var(--muted);
+      font-size: 10px;
+      margin-bottom: 4px;
+    }
+
+    .inventory-list-cell strong { font-size: 13px; }
+
+
+    .inventory-edit-row { display:flex; align-items:center; gap:6px; margin-top:7px; }
+    .inventory-edit-input { width:86px; min-width:0; padding:7px 8px; border:1px solid var(--line); border-radius:8px; font:inherit; font-size:13px; }
+    .inventory-save-button { border:0; border-radius:8px; padding:8px 10px; background:var(--blue); color:#fff; font-size:11px; font-weight:800; cursor:pointer; }
+    .inventory-save-button:disabled { opacity:.55; cursor:wait; }
+    .inventory-edit-message { min-height:14px; margin-top:5px; font-size:10px; color:var(--muted); }
+    .inventory-percent-row { display:flex; justify-content:space-between; gap:6px; margin-top:4px; color:var(--muted); font-size:10px; }
+    .all-location-bar { height:11px; margin-top:5px; border-radius:99px; background:#e8edf4; overflow:hidden; box-shadow:inset 0 0 0 1px rgba(30,45,70,.035); }
+    .all-location-bar span { display:block; height:100%; border-radius:99px; background:var(--green); }
+    .all-location-bar span.critical { background:var(--orange); }
+    .all-location-bar span.empty { background:var(--red); }
+    .all-location-bar span.over { background:var(--purple); }
+    .all-location-edit { margin-top:5px; padding:4px 6px; border:1px solid var(--line); border-radius:7px; background:#fff; color:var(--blue); font-size:10px; font-weight:800; cursor:pointer; }
+
+    .inventory-loading {
+      padding: 28px 15px;
+      border: 1px dashed #dbe2eb;
+      border-radius: 14px;
+      background: white;
+      color: var(--muted);
+      text-align: center;
+      font-size: 13px;
+    }
+
+    .all-locations-hint {
+      margin: 0 0 13px;
+      padding: 12px 14px;
+      border: 1px solid #dcecf5;
+      border-radius: 12px;
+      background: #f0f8ff;
+      color: #435a70;
+      font-size: 12px;
+      line-height: 1.5;
+    }
+
+    .all-item-card {
+      margin-bottom: 8px;
+      padding: 10px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: white;
+      box-shadow: 0 2px 7px rgba(24, 39, 75, .045);
+    }
+
+    .all-item-title {
+      margin: 0 0 7px;
+      font-size: 13px;
+      overflow-wrap: anywhere;
+    }
+
+    .all-location-grid {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: 5px;
+    }
+
+    .all-location-cell {
+      min-width: 0;
+      padding: 7px 6px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #f8fafc;
+    }
+
+    .all-location-cell.needs-review {
+      border-color: #f0c5c5;
+      background: #fff5f5;
+    }
+
+    .all-location-cell.check-source {
+      border-color: #b9e4ce;
+      background: #f0fbf5;
+    }
+
+    .all-location-name {
+      display: block;
+      margin-bottom: 4px;
+      font-size: 11px;
+      font-weight: 800;
+    }
+
+    .all-location-quantity {
+      display: block;
+      font-size: 13px;
+      font-weight: 800;
+      overflow-wrap: anywhere;
+    }
+
+    .all-location-max {
+      display: block;
+      margin-top: 3px;
+      color: var(--muted);
+      font-size: 10px;
+    }
+
+    .all-location-status {
+      display: block;
+      margin-top: 7px;
+      font-size: 9px;
+      font-weight: 800;
+      line-height: 1.3;
+    }
+
+    .all-location-status.empty,
+    .all-location-status.critical { color: #b42318; }
+    .all-location-status.over { color: #7856c9; }
+    .all-location-status.normal { color: #16845b; }
+    .all-location-status.missing { color: #697386; }
+
+    .matrix-scroll {
+      width: 100%;
+      overflow-x: auto;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: white;
+    }
+
+    .inventory-matrix {
+      width: 100%;
+      min-width: 800px;
+      border-collapse: separate;
+      border-spacing: 0;
+      font-size: 12px;
+    }
+
+    .inventory-matrix th,
+    .inventory-matrix td {
+      padding: 11px 10px;
+      border-bottom: 1px solid var(--line);
+      text-align: center;
+      vertical-align: middle;
+    }
+
+    .inventory-matrix th {
+      position: sticky;
+      top: 0;
+      background: #f5f8fc;
+      color: #536174;
+      font-size: 11px;
+      white-space: nowrap;
+    }
+
+    .inventory-matrix th:first-child,
+    .inventory-matrix td:first-child {
+      text-align: left;
+      min-width: 180px;
+    }
+
+    .inventory-matrix td:first-child {
+      font-weight: 700;
+      overflow-wrap: anywhere;
+    }
+
+    .inventory-matrix tr:last-child td { border-bottom: 0; }
+
+    .matrix-quantity {
+      display: block;
+      font-weight: 800;
+      font-size: 13px;
+    }
+
+    .matrix-max {
+      display: block;
+      margin-top: 3px;
+      color: var(--muted);
+      font-size: 10px;
+    }
+
+    .matrix-status {
+      display: inline-block;
+      margin-top: 5px;
+      padding: 3px 5px;
+      border-radius: 6px;
+      font-size: 9px;
+      font-weight: 800;
+      white-space: nowrap;
+    }
+
+    .matrix-status.empty { background: #fff0f0; color: #d64545; }
+    .matrix-status.critical { background: #fff5e7; color: #b45f00; }
+    .matrix-status.over { background: #f2edff; color: #7856c9; }
+    .matrix-status.normal { background: #e8f8f0; color: #16845b; }
+    .matrix-status.missing { background: #eef1f5; color: #697386; }
+
+    @media (max-width: 700px) {
+      .all-location-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .all-location-cell:last-child { grid-column: auto; }
+    }
+
+    .content-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr);
+      gap: 14px;
+    }
+
+    .panel {
+      min-width: 0;
+      background: white;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 18px;
+    }
+
+    .panel-heading {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      margin-bottom: 14px;
+    }
+
+    .panel-heading .panel-icon {
+      display: grid;
+      place-items: center;
+      width: 36px;
+      height: 36px;
+      border-radius: 12px;
+      background: #fff3e7;
+      font-size: 18px;
+    }
+
+    .panel-heading h3 {
+      margin: 0;
+      font-size: 15px;
+    }
+
+    .panel-heading p {
+      margin: 4px 0 0;
+      color: var(--muted);
+      font-size: 11px;
+    }
+
+    .empty-state {
+      padding: 22px 12px;
+      text-align: center;
+      color: var(--muted);
+      background: #f8fafc;
+      border: 1px dashed #dbe2eb;
+      border-radius: 13px;
+      font-size: 13px;
+      line-height: 1.5;
+    }
+
+    .empty-state .empty-icon {
+      display: block;
+      margin-bottom: 7px;
+      font-size: 25px;
+    }
+
+    .attention-list { display: flex; flex-direction: column; gap: 0; }
+
+    .activity-list {
+      display: flex;
+      flex-direction: column;
+      gap: 13px;
+    }
+
+    .activity-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+    }
+
+    .activity-dot {
+      width: 9px;
+      height: 9px;
+      margin-top: 4px;
+      border-radius: 50%;
+      background: #9aa8ba;
+      flex: 0 0 9px;
+    }
+
+    .activity-row strong {
+      display: block;
+      font-size: 12px;
+    }
+
+    .activity-row span {
+      display: block;
+      margin-top: 4px;
+      color: var(--muted);
+      font-size: 11px;
+      line-height: 1.4;
+    }
+
+    .status-message {
+      margin-top: 16px;
+      color: var(--muted);
+      font-size: 11px;
+      text-align: center;
+    }
+
+    .bottom-nav {
+      position: fixed;
+      z-index: 10;
+      left: 50%;
+      bottom: 0;
+      transform: translateX(-50%);
+      width: 100%;
+      max-width: 1120px;
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      padding: 8px 8px max(8px, env(safe-area-inset-bottom));
+      background: rgba(255,255,255,.96);
+      border-top: 1px solid var(--line);
+      backdrop-filter: blur(12px);
+    }
+
+    .nav-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      min-height: 49px;
+      border: 0;
+      border-radius: 12px;
+      background: transparent;
+      color: #778195;
+      font-size: 10px;
+      font-weight: 700;
+    }
+
+    .nav-item .nav-icon { font-size: 19px; }
+    .nav-item.active { background: var(--blue-soft); color: var(--blue); }
+
+    .coming-soon {
+      display: none;
+      padding: 35px 20px;
+      background: white;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      text-align: center;
+      box-shadow: var(--shadow);
+    }
+
+    .coming-soon .big-icon { font-size: 38px; }
+    .coming-soon h2 { margin: 12px 0 8px; }
+    .coming-soon p {
+      max-width: 420px;
+      margin: 0 auto;
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.6;
+    }
+
+    .toast {
+      position: fixed;
+      z-index: 20;
+      left: 50%;
+      bottom: 85px;
+      transform: translate(-50%, 12px);
+      width: max-content;
+      max-width: calc(100% - 32px);
+      padding: 11px 15px;
+      border-radius: 12px;
+      background: #172033;
+      color: white;
+      font-size: 12px;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity .2s ease, transform .2s ease;
+    }
+
+    .toast.show {
+      opacity: 1;
+      transform: translate(-50%, 0);
+    }
+
+    @media (max-width: 850px) {
+      .stats-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .location-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+      .content-grid { grid-template-columns: 1fr; }
+    }
+
+    @media (max-width: 620px) {
+      .inventory-grid { grid-template-columns: 1fr; }
+      .inventory-list-row {
+        grid-template-columns: minmax(0, 1fr) 65px 65px;
+        gap: 8px;
+      }
+      .inventory-list-row .stock-badge {
+        grid-column: 1 / -1;
+        justify-self: start;
+      }
+    }
+
+    @media (max-width: 520px) {
+      .app-shell { padding: 14px 12px 95px; }
+      .topbar { margin-bottom: 16px; }
+      .brand-mark { width: 42px; height: 42px; flex-basis: 42px; }
+      .brand h1 { font-size: 18px; }
+      .brand p { font-size: 11px; }
+      .refresh-button { padding: 9px 10px; font-size: 12px; }
+      .welcome { padding: 19px; border-radius: 18px; margin-bottom: 18px; }
+      .stats-grid { gap: 9px; }
+      .stat-card { padding: 13px; border-radius: 15px; }
+      .stat-card .number { font-size: 25px; }
+      .location-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 9px; }
+      .location-card { padding: 14px; border-radius: 15px; }
+      .section { margin-top: 22px; }
+      .panel { padding: 15px; }
+    }
+
+    @media (max-width: 350px) {
+      .stats-grid { grid-template-columns: 1fr 1fr; }
+      .location-grid { grid-template-columns: 1fr 1fr; }
+      .brand p { display: none; }
+    }
+
+
+    .incoming-wrap { max-width: 720px; margin: 4px auto 24px; }
+    .incoming-hero { padding: 22px; border-radius: 22px; background: linear-gradient(120deg,#e9f4ff 0%,#e9fbf8 100%); border: 1px solid #dcecf5; margin-bottom: 16px; }
+    .incoming-hero .eyebrow { margin: 0 0 7px; color: var(--blue); text-transform: uppercase; font-size: 11px; font-weight: 800; letter-spacing: 1.2px; }
+    .incoming-hero h2 { margin: 0; font-size: 25px; }
+    .incoming-hero p { margin: 8px 0 0; color: #536579; font-size: 13px; line-height: 1.5; }
+    .incoming-card { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow); padding: 20px; }
+    .incoming-month { display: flex; align-items: center; gap: 10px; background: #f0f7ff; border: 1px solid #d9eaff; color: #205e9f; padding: 12px 14px; border-radius: 13px; font-size: 13px; font-weight: 700; margin-bottom: 18px; }
+    .incoming-form { display: grid; gap: 16px; }
+    .form-field { display: grid; gap: 7px; }
+    .form-field label { font-size: 13px; font-weight: 700; }
+    .form-field input, .form-field select, .form-field textarea { width: 100%; min-width: 0; border: 1px solid #d8deea; border-radius: 12px; background: #fff; padding: 13px 12px; color: var(--text); outline: none; }
+    .form-field input:focus, .form-field select:focus, .form-field textarea:focus { border-color: var(--blue); box-shadow: 0 0 0 3px rgba(40,120,208,.12); }
+    .form-field textarea { min-height: 86px; resize: vertical; }
+    .incoming-submit { border: 0; border-radius: 13px; background: linear-gradient(135deg,#2878d0,#168b9b); color: white; padding: 14px 16px; font-weight: 800; box-shadow: 0 7px 16px rgba(40,120,208,.18); }
+    .incoming-submit:disabled { opacity: .6; cursor: wait; }
+    .incoming-note { margin: 14px 0 0; color: var(--muted); font-size: 12px; line-height: 1.5; }
+    .form-help {
+      display: block;
+      margin-top: 6px;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.45;
+    }
+    .incoming-calculation {
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 11px 12px;
+      background: #f5f8fc;
+      color: var(--text);
+      font-weight: 800;
+      font-size: 13px;
+    }
+    .incoming-result { display: none; margin-top: 14px; padding: 12px 14px; border-radius: 12px; font-size: 13px; line-height: 1.5; }
+    .incoming-result.success { display: block; background: #eaf8f1; color: #116b49; border: 1px solid #c8ead9; }
+    .incoming-result.error { display: block; background: #fff0f0; color: #a82e2e; border: 1px solid #f3cccc; }
+    @media (max-width: 600px) { .incoming-card { padding: 16px; } .incoming-hero { padding: 18px; } }
+
+
+    .records-wrap { max-width: 1100px; margin: 4px auto 24px; }
+    .records-hero { padding: 20px 22px; border-radius: 20px; background: linear-gradient(120deg,#eef5ff 0%,#f0f8f5 100%); border: 1px solid #dce8f2; margin-bottom: 16px; }
+    .records-hero h2 { margin: 0; font-size: 24px; }
+    .records-hero p { margin: 7px 0 0; color: #536579; font-size: 13px; line-height: 1.5; }
+    .records-panel { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow); padding: 16px; }
+    .records-tabs { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:15px; }
+    .records-tab { border:1px solid var(--line); background:#fff; color:var(--text); border-radius:11px; padding:10px 13px; font-weight:800; font-size:12px; }
+    .records-tab.active { background:#eaf3ff; color:#205e9f; border-color:#b9d7f7; }
+    .records-filter { min-width:105px; border:1px solid var(--line); border-radius:11px; padding:11px 10px; background:#fff; font:inherit; font-size:13px; color:var(--text); }
+    .records-toolbar { display:flex; gap:10px; align-items:center; justify-content:space-between; flex-wrap:wrap; margin-bottom:12px; }
+    .records-count { color:var(--muted); font-size:12px; }
+    .records-search { min-width:0; flex:1; max-width:360px; border:1px solid var(--line); border-radius:11px; padding:11px 12px; font:inherit; font-size:14px; background:#fff; }
+    .records-table-wrap { width:100%; overflow-x:auto; }
+    .records-table { width:100%; border-collapse:collapse; font-size:12px; min-width:760px; }
+    .records-table th { text-align:left; color:var(--muted); background:#f7f9fc; padding:11px 10px; white-space:nowrap; font-weight:800; border-bottom:1px solid var(--line); }
+    .records-table td { padding:11px 10px; border-bottom:1px solid var(--line); vertical-align:top; line-height:1.45; }
+    .records-table tr:last-child td { border-bottom:0; }
+    .records-delete-button { border:1px solid #f2b8b5; background:#fff4f3; color:#b42318; border-radius:8px; padding:7px 10px; font:inherit; font-weight:700; cursor:pointer; white-space:nowrap; }
+    .records-delete-button:active { transform:scale(.98); }
+    .records-item { font-weight:750; color:var(--text); }
+    .records-empty { text-align:center; padding:30px 12px; color:var(--muted); font-size:13px; }
+    .records-refresh { border:1px solid var(--line); border-radius:10px; padding:10px 12px; background:#fff; font-weight:750; color:var(--text); }
+    @media(max-width:600px) { .records-panel { padding:12px; } .records-search { max-width:none; flex-basis:100%; } .records-hero { padding:17px; } }
+
+    .analytics-page { display:none; }
+    .analytics-hero { background:linear-gradient(135deg,#edf6ff,#f4f0ff); border:1px solid #dce8fa; border-radius:20px; padding:20px; margin-bottom:16px; }
+    .analytics-hero h2 { margin:0 0 7px; font-size:22px; }
+    .analytics-hero p { margin:0; color:var(--muted); font-size:13px; line-height:1.5; }
+    .analytics-grid { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:12px; margin-bottom:16px; }
+    .analytics-stat { padding:16px; background:var(--card); border:1px solid var(--line); border-radius:16px; box-shadow:var(--shadow); min-width:0; }
+    .analytics-stat .label { font-size:12px; color:var(--muted); line-height:1.4; }
+    .analytics-stat .value { font-size:27px; font-weight:850; margin-top:8px; letter-spacing:-.5px; overflow-wrap:anywhere; }
+    .analytics-panels { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:14px; }
+    .analytics-panel { background:var(--card); border:1px solid var(--line); border-radius:16px; padding:17px; min-width:0; box-shadow:var(--shadow); }
+    .analytics-panel h3 { margin:0 0 5px; font-size:16px; }
+    .analytics-panel .sub { margin:0 0 15px; color:var(--muted); font-size:12px; line-height:1.45; }
+    .analytics-location-row { margin:13px 0; }
+    .analytics-location-head { display:flex; justify-content:space-between; gap:8px; font-size:13px; margin-bottom:6px; }
+    .analytics-location-head strong { font-weight:800; }
+    .analytics-bar { height:9px; background:#edf1f6; border-radius:99px; overflow:hidden; }
+    .analytics-bar > span { display:block; height:100%; width:0; border-radius:99px; background:linear-gradient(90deg,#69a8f7,#7a7be8); }
+    .analytics-legend { display:flex; gap:12px; flex-wrap:wrap; color:var(--muted); font-size:11px; margin-top:13px; }
+    .analytics-month-list { display:flex; flex-direction:column; gap:10px; }
+    .analytics-month-row { display:grid; grid-template-columns:76px minmax(0,1fr) 42px; gap:9px; align-items:center; font-size:12px; }
+    .analytics-month-label { color:var(--muted); }
+    .analytics-month-track { height:10px; background:#edf1f6; border-radius:99px; overflow:hidden; }
+    .analytics-month-track span { display:block; height:100%; border-radius:99px; background:linear-gradient(90deg,#4ec7b0,#8adcc4); }
+    .analytics-month-value { text-align:right; font-weight:800; }
+    .analytics-note { margin-top:14px; font-size:11px; color:var(--muted); line-height:1.5; }
+    .analytics-toolbar { display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap; margin:0 0 14px; }
+    .analytics-toolbar select,.analytics-toolbar button { border:1px solid var(--line); border-radius:10px; padding:10px 12px; background:#fff; color:var(--text); font:inherit; font-size:13px; }
+    @media(max-width:700px) { .analytics-grid { grid-template-columns:repeat(2,minmax(0,1fr)); } .analytics-panels { grid-template-columns:1fr; } .analytics-hero { padding:17px; } }
+
+  
+    /* ORTH-STORE Midnight Dark theme overrides — visual-only; app logic unchanged */
+    :root {
+      color-scheme: dark;
+      --bg: #0b1020;
+      --card: #141c2f;
+      --text: #edf3ff;
+      --muted: #9aa9c2;
+      --line: #293650;
+      --blue: #70a9ff;
+      --blue-soft: #1c3151;
+      --red: #ff777f;
+      --orange: #ffbd69;
+      --green: #50d6a0;
+      --purple: #b49aff;
+      --teal: #56d5db;
+      --shadow: 0 8px 26px rgba(0, 0, 0, .22);
+      --radius: 18px;
+    }
+    body { background: var(--bg); color: var(--text); }
+    .brand-mark { background: linear-gradient(135deg,#356fd0,#178d98); }
+    .refresh-button, .location-card, .location-tab, .view-toggle,
+    .inventory-search, .inventory-card, .inventory-list-row, .all-item-card,
+    .all-location-cell, .matrix-scroll, .panel, .coming-soon,
+    .incoming-card, .records-panel, .records-filter, .records-search,
+    .records-refresh, .analytics-stat, .analytics-panel,
+    .form-field input, .form-field select, .form-field textarea,
+    .inventory-edit-input {
+      background-color: var(--card);
+      color: var(--text);
+      border-color: var(--line);
+    }
+    .welcome, .incoming-hero, .incoming-month, .records-hero, .analytics-hero {
+      background: linear-gradient(125deg, #152744 0%, #142b30 100%);
+      border-color: #2a4560;
+    }
+    .welcome .subtext, .incoming-hero p, .records-hero p { color: #b5c5dc; }
+    .stat-card, .location-card, .panel, .inventory-card, .inventory-list-row,
+    .all-item-card, .records-panel, .analytics-stat, .analytics-panel,
+    .incoming-card, .coming-soon { box-shadow: var(--shadow); }
+    .location-card::before { opacity: .9; }
+    .location-tab.active { background: #244a79; color: #eaf3ff; border-color: #477db9; }
+    .view-toggle button { color: var(--muted); }
+    .view-toggle button.active { background: var(--blue-soft); color: #a9ceff; }
+    .inventory-search:focus, .form-field input:focus, .form-field select:focus,
+    .form-field textarea:focus, .records-search:focus {
+      border-color: #70a9ff;
+      box-shadow: 0 0 0 3px rgba(112,169,255,.16);
+      outline: none;
+    }
+    .stock-badge.normal { background: #153b32; color: #71e4b5; }
+    .stock-badge.critical { background: #432f1b; color: #ffca82; }
+    .stock-badge.empty { background: #48242b; color: #ff9aa0; }
+    .stock-badge.over { background: #30264b; color: #c2afff; }
+    .stock-badge.missing { background: #283247; color: #b0bdd2; }
+    .capacity-track, .all-location-bar, .analytics-bar, .analytics-month-track,
+    .analytics-month-track, .analytics-month-track span { background-color: #263249; }
+    .all-location-cell { background: #111a2c; }
+    .all-location-cell.needs-review { border-color: #714047; background: #2a1b28; }
+    .all-location-cell.check-source { border-color: #285a4c; background: #142b2a; }
+    .matrix-scroll { background: var(--card); }
+    .inventory-matrix th, .records-table th { background: #1b263b; color: #b5c4dc; }
+    .inventory-matrix th, .inventory-matrix td, .records-table th, .records-table td { border-color: var(--line); }
+    .all-locations-hint { background: #14283c; border-color: #2a4560; color: #c4d5e9; }
+    .empty-state, .inventory-loading, .records-empty { background: #10182a; border-color: #2a3850; color: var(--muted); }
+    .incoming-month { color: #c7e2ff; }
+    .incoming-calculation { background: #101a2c; border-color: var(--line); color: var(--text); }
+    .incoming-result.success { background: #14352e; color: #91f0c5; border-color: #285b4b; }
+    .incoming-result.error { background: #3d2027; color: #ffb4b7; border-color: #6b333c; }
+    .incoming-submit { background: linear-gradient(135deg,#356fd0,#168d98); }
+    .records-tab { background: #111a2c; color: var(--text); border-color: var(--line); }
+    .records-tab.active { background: #1c3151; color: #a9ceff; border-color: #477db9; }
+    .records-delete-button { background: #3a2027; color: #ffb0b5; border-color: #6b333c; }
+    .analytics-toolbar select, .analytics-toolbar button { background: var(--card); color: var(--text); border-color: var(--line); }
+    .analytics-bar > span { background: linear-gradient(90deg,#5e9cff,#8f82ff); }
+    .analytics-month-track span { background: linear-gradient(90deg,#3ab99f,#79dfbd); }
+    .bottom-nav { background: rgba(13, 19, 34, .96); border-color: var(--line); }
+    .nav-item { color: #8e9db7; }
+    .nav-item.active { background: #1c3151; color: #a9ceff; }
+    .toast { background: #eaf1ff; color: #10182a; box-shadow: 0 8px 28px rgba(0,0,0,.3); }
+    .inventory-edit-input { color: var(--text); }
+    input, select, textarea { accent-color: #70a9ff; }
+    option { background: #141c2f; color: #edf3ff; }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { transition-duration: .01ms !important; scroll-behavior: auto !important; }
+    }
+
+  </style>
+</head>
+<body>
+  <div class="app-shell">
+    <header class="topbar">
+      <div class="brand">
+        <div class="brand-mark" aria-hidden="true">✚</div>
+        <div>
+          <h1>ORTH-STORE</h1>
+          <p>Orthopaedic Inventory</p>
+        </div>
+      </div>
+      <button class="refresh-button" id="refreshButton" type="button" onclick="refreshDashboard()">↻ Refresh</button>
+    </header>
+
+    <main>
+      <section id="homePage">
+        <div class="welcome">
+          <p class="eyebrow">Inventory overview</p>
+          <h2>Hello! Welcome to ORTH-STORE 👋</h2>
+          <p class="subtext" id="currentDate">Your stock overview at a glance.</p>
+        </div>
+
+        <section class="section">
+          <div class="section-heading">
+            <div>
+              <h2>Stock Overview</h2>
+              <p>A quick look at your inventory</p>
+            </div>
+          </div>
+
+          <div class="stats-grid">
+            <article class="stat-card tone-blue">
+              <div class="stat-top"><span class="stat-icon">📦</span></div>
+              <div class="label">Total Stock Items</div>
+              <div class="number" id="totalItems">—</div>
+              <div class="note">Different item types</div>
+            </article>
+
+            <article class="stat-card tone-red">
+              <div class="stat-top"><span class="stat-icon">🚨</span></div>
+              <div class="label">Critical Stock</div>
+              <div class="number" id="criticalItems">—</div>
+              <div class="note">Needs attention</div>
+            </article>
+
+            <article class="stat-card tone-orange">
+              <div class="stat-top"><span class="stat-icon">⛔</span></div>
+              <div class="label">Out of Stock</div>
+              <div class="number" id="outOfStock">—</div>
+              <div class="note">Quantity is zero</div>
+            </article>
+
+            <article class="stat-card tone-purple">
+              <div class="stat-top"><span class="stat-icon">📈</span></div>
+              <div class="label">Over Maximum</div>
+              <div class="number" id="overstock">—</div>
+              <div class="note">Above storage limit</div>
+            </article>
+          </div>
+        </section>
+
+        <section class="section">
+          <div class="section-heading">
+            <div>
+              <h2>Locations</h2>
+              <p>Choose a location to view its stock</p>
+            </div>
+            <button class="small-link" type="button" onclick="showPage('inventory')">View inventory →</button>
+          </div>
+
+          <div class="location-grid">
+            <button class="location-card location-ed" type="button" onclick="openLocation('ED')">
+              <span class="location-icon">🚑</span>
+              <h3>ED</h3>
+              <p class="location-description">Emergency Department</p>
+              <span class="location-status"><strong id="edAlert">—</strong><span>items need attention</span></span>
+            </button>
+
+            <button class="location-card location-clinic" type="button" onclick="openLocation('Clinic')">
+              <span class="location-icon">🩺</span>
+              <h3>Clinic</h3>
+              <p class="location-description">Clinic supplies</p>
+              <span class="location-status"><strong id="clinicAlert">—</strong><span>items need attention</span></span>
+            </button>
+
+            <button class="location-card location-ot" type="button" onclick="openLocation('OT')">
+              <span class="location-icon">🏥</span>
+              <h3>OT</h3>
+              <p class="location-description">Operating Theatre</p>
+              <span class="location-status"><strong id="otAlert">—</strong><span>items need attention</span></span>
+            </button>
+
+            <button class="location-card location-ward" type="button" onclick="openLocation('Ward')">
+              <span class="location-icon">🛏️</span>
+              <h3>Ward</h3>
+              <p class="location-description">Ward supplies</p>
+              <span class="location-status"><strong id="wardAlert">—</strong><span>items need attention</span></span>
+            </button>
+
+            <button class="location-card location-paed" type="button" onclick="openLocation('Paed')">
+              <span class="location-icon">🧸</span>
+              <h3>Paed</h3>
+              <p class="location-description">Paediatric storage</p>
+              <span class="location-status"><strong id="paedAlert">—</strong><span>items need attention</span></span>
+            </button>
+          </div>
+        </section>
+
+        <section class="section">
+          <div class="content-grid">
+            <article class="panel">
+              <div class="panel-heading">
+                <div class="panel-icon">🚨</div>
+                <div>
+                  <h3>Items Requiring Attention</h3>
+                  <p>Low, empty or over-limit stock</p>
+                </div>
+              </div>
+              <div id="attentionList" class="empty-state">
+                <span class="empty-icon">🔌</span>
+                <strong>Loading stock data…</strong><br>
+                Connecting to your spreadsheet.
+              </div>
+            </article>
+
+            <article class="panel">
+              <div class="panel-heading">
+                <div class="panel-icon">🕒</div>
+                <div>
+                  <h3>Recent Activity</h3>
+                  <p>Latest stock changes</p>
+                </div>
+              </div>
+              <div class="empty-state">
+                <span class="empty-icon">📋</span>
+                We have not connected a stock movement history yet.
+              </div>
+            </article>
+          </div>
+        </section>
+
+        <div class="status-message" id="statusMessage">Connecting to your spreadsheet…</div>
+      </section>
+
+
+      <section id="inventoryPage" style="display:none">
+        <div class="section-heading" style="margin-top:5px">
+          <div>
+            <h2>Inventory</h2>
+            <p>View stock quantities for each location</p>
+          </div>
+          <button class="refresh-button" type="button" onclick="loadInventory()">↻ Refresh</button>
+        </div>
+
+        <div class="location-tabs" aria-label="Choose inventory location">
+          <button class="location-tab active" data-location="ALL" type="button" onclick="selectInventoryLocation('ALL')">ALL</button>
+          <button class="location-tab" data-location="ED" type="button" onclick="selectInventoryLocation('ED')">ED</button>
+          <button class="location-tab" data-location="Clinic" type="button" onclick="selectInventoryLocation('Clinic')">Clinic</button>
+          <button class="location-tab" data-location="OT" type="button" onclick="selectInventoryLocation('OT')">OT</button>
+          <button class="location-tab" data-location="Ward" type="button" onclick="selectInventoryLocation('Ward')">Ward</button>
+          <button class="location-tab" data-location="Paed" type="button" onclick="selectInventoryLocation('Paed')">Paed</button>
+        </div>
+
+        <div id="allLocationsHint" class="all-locations-hint">
+          Compare the same item across all five locations. Each location shows Current / Maximum so you can quickly spot where stock is low and where there may be stock to check.
+        </div>
+
+        <div class="inventory-toolbar">
+          <input class="inventory-search" id="inventorySearch" type="search" placeholder="Search item name…" oninput="renderInventoryItems()" aria-label="Search inventory">
+          <div class="view-toggle" aria-label="Choose view">
+            <button id="cardViewButton" class="active" type="button" onclick="setInventoryView('card')">▦ Cards</button>
+            <button id="listViewButton" type="button" onclick="setInventoryView('list')">☷ List</button>
+          </div>
+        </div>
+
+        <div class="inventory-summary">
+          <span id="inventoryCount">Loading items…</span>
+          <span id="inventoryLocationLabel">ED</span>
+        </div>
+
+        <div id="inventoryItems" class="inventory-loading">Loading inventory from Google Sheets…</div>
+      </section>
+
+
+      <section id="incomingPage" style="display:none">
+        <div class="incoming-wrap">
+          <div class="incoming-hero">
+            <p class="eyebrow">Stock movement</p>
+            <h2>Receive Incoming Stock</h2>
+            <p>Record stock received once. ORTH-STORE will add it to the selected location and to the current month in New Stock.</p>
+          </div>
+          <div class="incoming-card">
+            <div class="incoming-month"><span>🗓️</span><span>Monthly record target: <strong id="incomingMonthLabel">Checking month…</strong></span></div>
+            <form class="incoming-form" id="incomingStockForm" onsubmit="submitIncomingStockForm(event)">
+              <div class="form-field">
+                <label for="incomingItem">Item name</label>
+                <select id="incomingItem" name="itemName" required>
+                  <option value="">Loading items…</option>
+                </select>
+              </div>
+              <div class="form-field">
+                <label for="incomingLocation">Destination location</label>
+                <select id="incomingLocation" name="locationName" required>
+                  <option value="ED">ED</option><option value="Clinic">Clinic</option><option value="OT">OT</option><option value="Ward">Ward</option><option value="Paed">Paed</option>
+                </select>
+              </div>
+              <div class="form-field">
+                <label for="incomingQuantity">Quantity received</label>
+                <input id="incomingQuantity" name="quantity" type="number" min="0.001" step="0.001" inputmode="decimal" placeholder="e.g. 1 box" required>
+              </div>
+              <div class="form-field">
+                <label for="incomingMultiplier">Multiplier (stock units per package)</label>
+                <input id="incomingMultiplier" name="multiplier" type="number" min="0.001" step="0.001" inputmode="decimal" value="1" required>
+                <small class="form-help">Usually 1. For POP, if 1 inventory unit = 100 rolls: 12 rolls/box → 0.12; 10 rolls/box → 0.10.</small>
+              </div>
+              <div class="incoming-calculation" id="incomingCalculation" aria-live="polite">Stock units to add: 0</div>
+              <div class="form-field">
+                <label for="incomingRemarks">Remarks <span style="font-weight:400;color:var(--muted)">(optional)</span></label>
+                <textarea id="incomingRemarks" name="remarks" maxlength="500" placeholder="Supplier, delivery note, or other notes"></textarea>
+              </div>
+              <button class="incoming-submit" id="incomingSubmitButton" type="submit">＋ Receive Stock</button>
+            </form>
+            <div id="incomingResult" class="incoming-result" role="status" aria-live="polite"></div>
+            <p class="incoming-note">Before submitting, check the item, destination and quantity. This form updates spreadsheet quantities, so each receipt should be submitted only once. Each receipt and its optional remarks are also saved in the Incoming Log sheet, created automatically on first use.</p>
+          </div>
+        </div>
+      </section>
+
+
+      <section id="recordsPage" style="display:none">
+        <div class="records-wrap">
+          <div class="records-hero">
+            <h2>Stock Records</h2>
+            <p>View monthly added-stock history from New Stock and individual receipts submitted through Incoming. Your spreadsheet's monthly usage calculations remain unchanged.</p>
+          </div>
+          <div class="records-panel">
+            <div class="records-tabs" role="tablist" aria-label="Record type">
+              <button class="records-tab active" type="button" data-record-tab="history" onclick="setRecordsTab('history')">Added Stock History</button>
+              <button class="records-tab" type="button" data-record-tab="transactions" onclick="setRecordsTab('transactions')">Transaction Log</button>
+            </div>
+            <div class="records-toolbar">
+              <span id="recordsCount" class="records-count">Loading records…</span>
+              <input id="recordsSearch" class="records-search" type="search" placeholder="Search item, month, location or remarks…" aria-label="Search records" oninput="renderRecordsView()">
+              <select id="recordsYear" class="records-filter" aria-label="Filter by year" onchange="renderRecordsView()"><option value="">All years</option></select>
+              <button class="records-refresh" type="button" onclick="loadRecordsPage()">↻ Refresh</button>
+            </div>
+            <div id="recordsContent" class="records-empty">Loading records…</div>
+          </div>
+        </div>
+      </section>
+
+      <section class="analytics-page" id="analyticsPage">
+        <div class="analytics-hero">
+          <h2>📊 Stock Analytics</h2>
+          <p>A quick overview of current stock conditions across ED, Clinic, OT, Ward and Paed, plus monthly additions recorded in New Stock.</p>
+        </div>
+        <div class="analytics-toolbar">
+          <span id="analyticsUpdated" class="records-count">Loading analytics…</span>
+          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+            <select id="analyticsYear" aria-label="Filter added stock by year" onchange="renderAnalytics()"><option value="">All years</option></select>
+            <button type="button" onclick="loadAnalytics()">↻ Refresh</button>
+          </div>
+        </div>
+        <div id="analyticsStats" class="analytics-grid"><div class="records-empty">Loading analytics…</div></div>
+        <div class="analytics-panels">
+          <div class="analytics-panel">
+            <h3>Stock condition by location</h3>
+            <p class="sub">Count of items that are out of stock or at critical level in each location.</p>
+            <div id="analyticsLocations" class="records-empty">Loading location data…</div>
+            <div class="analytics-legend"><span>🔴 Out of stock</span><span>🟠 Critical (20% capacity or less)</span></div>
+          </div>
+          <div class="analytics-panel">
+            <h3>Monthly added stock</h3>
+            <p class="sub">Total positive quantities entered for each month in New Stock. This is not monthly usage.</p>
+            <div id="analyticsMonthly" class="records-empty">Loading monthly additions…</div>
+            <p class="analytics-note">Monthly usage calculations in your spreadsheet are not changed or recalculated by this page.</p>
+          </div>
+        </div>
+      </section>
+      <section class="coming-soon" id="otherPage" style="display:none">
+        <div class="big-icon" id="otherPageIcon">📦</div>
+        <h2 id="otherPageTitle">Inventory</h2>
+        <p id="otherPageText">This page will be added in a later step. The homepage design is ready first.</p>
+        <p style="margin-top:16px"><button class="refresh-button" type="button" onclick="showPage('home')">← Back to Home</button></p>
+      </section>
+    </main>
+  </div>
+
+  <nav class="bottom-nav" aria-label="Main navigation">
+    <button class="nav-item active" data-page="home" type="button" onclick="showPage('home')">
+      <span class="nav-icon">🏠</span><span>Home</span>
+    </button>
+    <button class="nav-item" data-page="inventory" type="button" onclick="showPage('inventory')">
+      <span class="nav-icon">📦</span><span>Inventory</span>
+    </button>
+    <button class="nav-item" data-page="incoming" type="button" onclick="showPage('incoming')">
+      <span class="nav-icon">➕</span><span>Incoming</span>
+    </button>
+    <button class="nav-item" data-page="records" type="button" onclick="showPage('records')">
+      <span class="nav-icon">📋</span><span>Records</span>
+    </button>
+    <button class="nav-item" data-page="analytics" type="button" onclick="showPage('analytics')">
+      <span class="nav-icon">📊</span><span>Analytics</span>
+    </button>
+  </nav>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <script>
+    const PAGE_DETAILS = {
+      inventory: {
+        icon: "📦",
+        title: "Inventory",
+        text: "The homepage is now connected to read your stock data. Next, we will build the full inventory list with location selection and search."
+      },
+      incoming: {
+        icon: "➕",
+        title: "Incoming Stock",
+        text: "Here we will make a form to record stock received and update the correct location."
+      },
+      records: {
+        icon: "📋",
+        title: "Stock Records",
+        text: "Here we will show the history of stock received, used, transferred or corrected."
+      },
+      analytics: {
+        icon: "📊",
+        title: "Summary & Analytics",
+        text: "Stock analytics based on current inventory and monthly additions."
+      }
+    };
+
+    const LOCATION_IDS = {
+      "ED": "edAlert",
+      "Clinic": "clinicAlert",
+      "OT": "otAlert",
+      "Ward": "wardAlert",
+      "Paed": "paedAlert"
+    };
+
+    let selectedInventoryLocation = "ALL";
+    let currentInventoryItems = [];
+    let inventoryView = "card";
+    let inventoryRequestNumber = 0;
+
+    function setCurrentDate() {
+      const now = new Date();
+      document.getElementById("currentDate").textContent =
+        "Today is " + now.toLocaleDateString(undefined, {
+          weekday: "long",
+          day: "numeric",
+          month: "long",
+          year: "numeric"
+        }) + ". Your stock overview at a glance.";
+    }
+
+    function showPage(page) {
+      const home = document.getElementById("homePage");
+      const inventoryPage = document.getElementById("inventoryPage");
+      const incomingPage = document.getElementById("incomingPage");
+      const recordsPage = document.getElementById("recordsPage");
+      const other = document.getElementById("otherPage");
+      const analyticsPage = document.getElementById("analyticsPage");
+      home.style.display = page === "home" ? "block" : "none";
+      inventoryPage.style.display = page === "inventory" ? "block" : "none";
+      incomingPage.style.display = page === "incoming" ? "block" : "none";
+      recordsPage.style.display = page === "records" ? "block" : "none";
+      other.style.display = "none";
+      analyticsPage.style.display = page === "analytics" ? "block" : "none";
+      if (page === "analytics") loadAnalytics();
+      document.querySelectorAll(".nav-item").forEach(function (button) {
+        button.classList.toggle("active", button.dataset.page === page);
+      });
+      if (page === "inventory") loadInventory();
+      if (page === "incoming") loadIncomingStockFormData();
+      if (page === "records") loadRecordsPage();
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+
+    function openLocation(location) {
+      selectedInventoryLocation = location;
+      showPage("inventory");
+      updateInventoryLocationButtons();
+    }
+
+    function selectInventoryLocation(location) {
+      selectedInventoryLocation = location;
+      updateInventoryLocationButtons();
+      loadInventory();
+    }
+
+    function updateInventoryLocationButtons() {
+      document.querySelectorAll(".location-tab").forEach(function (button) {
+        button.classList.toggle("active", button.dataset.location === selectedInventoryLocation);
+      });
+      document.getElementById("inventoryLocationLabel").textContent =
+        selectedInventoryLocation === "ALL" ? "All locations" : selectedInventoryLocation;
+      document.getElementById("allLocationsHint").style.display =
+        selectedInventoryLocation === "ALL" ? "block" : "none";
+    }
+
+    function setInventoryView(view) {
+      inventoryView = view === "list" ? "list" : "card";
+      document.getElementById("cardViewButton").classList.toggle("active", inventoryView === "card");
+      document.getElementById("listViewButton").classList.toggle("active", inventoryView === "list");
+      renderInventoryItems();
+    }
+
+
+
+    let incomingRecords = [];
+    let historicalRecords = { incoming: [], months: [] };
+    let incomingRecordsLoading = false;
+    let historicalRecordsLoading = false;
+    let activeRecordsTab = "history";
+
+    function escapeHtml(value) {
+      return String(value == null ? "" : value)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#39;");
+    }
+
+    let analyticsData = null;
+    let analyticsRequestNumber = 0;
+    let analyticsTimeoutId = null;
+
+    function showAnalyticsError(message) {
+      const safeMessage = escapeHtml(message || "Unknown error.");
+      document.getElementById("analyticsStats").innerHTML = '<div class="records-empty">Analytics could not load: ' + safeMessage + '</div>';
+      document.getElementById("analyticsLocations").innerHTML = '<div class="records-empty">Location data unavailable until Analytics connects.</div>';
+      document.getElementById("analyticsMonthly").innerHTML = '<div class="records-empty">Monthly additions unavailable until Analytics connects.</div>';
+      document.getElementById("analyticsUpdated").textContent = "Unable to load";
+    }
+
+    function loadAnalytics() {
+      const request = ++analyticsRequestNumber;
+      if (analyticsTimeoutId) clearTimeout(analyticsTimeoutId);
+      document.getElementById("analyticsStats").innerHTML = '<div class="records-empty">Loading analytics…</div>';
+      document.getElementById("analyticsLocations").innerHTML = '<div class="records-empty">Loading location data…</div>';
+      document.getElementById("analyticsMonthly").innerHTML = '<div class="records-empty">Loading monthly additions…</div>';
+      document.getElementById("analyticsUpdated").textContent = "Connecting…";
+
+      // Do not leave the page spinning forever if Apps Script never responds.
+      analyticsTimeoutId = setTimeout(function() {
+        if (request !== analyticsRequestNumber) return;
+        showAnalyticsError("No response from Apps Script after 20 seconds. Check Apps Script → Executions for a failed or still-running getStoreAnalyticsData execution, then confirm that the latest web app version is deployed.");
+      }, 20000);
+
+      if (typeof google === "undefined" || !google.script || !google.script.run) {
+        clearTimeout(analyticsTimeoutId);
+        showAnalyticsError("The Apps Script connection is unavailable. Open the deployed web app URL ending in /exec.");
+        return;
+      }
+
+      try {
+        google.script.run
+          .withSuccessHandler(function(data) {
+            if (request !== analyticsRequestNumber) return;
+            clearTimeout(analyticsTimeoutId);
+            if (!data || data.success !== true) {
+              analyticsData = null;
+              showAnalyticsError("The server responded, but did not return valid Analytics data. Check that getStoreAnalyticsData exists in Code.gs and deploy a new version.");
+              return;
+            }
+            analyticsData = data;
+            populateAnalyticsYearFilter();
+            renderAnalytics();
+            document.getElementById("analyticsUpdated").textContent = "Updated " + new Date().toLocaleTimeString([], {hour:"2-digit", minute:"2-digit"});
+          })
+          .withFailureHandler(function(error) {
+            if (request !== analyticsRequestNumber) return;
+            clearTimeout(analyticsTimeoutId);
+            const message = error && error.message ? error.message : String(error || "Unknown server error.");
+            showAnalyticsError(message + " Check Apps Script → Executions for details.");
+          })
+          .getStoreAnalyticsData();
+      } catch (error) {
+        clearTimeout(analyticsTimeoutId);
+        showAnalyticsError(error && error.message ? error.message : String(error));
+      }
+    }
+
+    function populateAnalyticsYearFilter() {
+      const select = document.getElementById("analyticsYear");
+      const previous = select.value;
+      const years = Array.from(new Set((analyticsData && analyticsData.monthlyAdded || []).map(function(row) { return row.key.slice(0,4); }))).sort().reverse();
+      select.innerHTML = '<option value="">All years</option>' + years.map(function(year) { return '<option value="' + escapeHtml(year) + '">' + escapeHtml(year) + '</option>'; }).join("");
+      if (years.indexOf(previous) !== -1) select.value = previous;
+    }
+
+    function renderAnalytics() {
+      if (!analyticsData) return;
+      const summary = analyticsData.summary || {};
+      const cards = [
+        {label:"Item types", value:summary.itemTypes || 0, icon:"📦"},
+        {label:"Out-of-stock item records", value:summary.outOfStock || 0, icon:"🔴"},
+        {label:"Critical item records", value:summary.critical || 0, icon:"🟠"},
+        {label:"Over maximum", value:summary.overMaximum || 0, icon:"📈"}
+      ];
+      document.getElementById("analyticsStats").innerHTML = cards.map(function(card) {
+        return '<div class="analytics-stat"><div class="label">' + card.icon + ' ' + escapeHtml(card.label) + '</div><div class="value">' + Number(card.value || 0).toLocaleString() + '</div></div>';
+      }).join("");
+
+      const locations = analyticsData.locations || [];
+      const maxProblems = Math.max(1, ...locations.map(function(row) { return row.outOfStock + row.critical; }));
+      if (!locations.length) {
+        document.getElementById("analyticsLocations").innerHTML = '<div class="records-empty">No location data found.</div>';
+      } else {
+        document.getElementById("analyticsLocations").innerHTML = locations.map(function(row) {
+          const issues = row.outOfStock + row.critical;
+          const width = Math.round(issues / maxProblems * 100);
+          const label = issues + ' issue' + (issues === 1 ? '' : 's');
+          return '<div class="analytics-location-row"><div class="analytics-location-head"><strong>' + escapeHtml(row.location) + '</strong><span>' + label + '</span></div><div class="analytics-bar"><span style="width:' + width + '%"></span></div><div class="analytics-note">' + row.outOfStock + ' out of stock · ' + row.critical + ' critical · ' + row.overMaximum + ' over maximum</div></div>';
+        }).join("");
+      }
+
+      const selectedYear = document.getElementById("analyticsYear").value;
+      let monthly = (analyticsData.monthlyAdded || []).filter(function(row) { return !selectedYear || row.key.slice(0,4) === selectedYear; });
+      monthly = monthly.slice(-12).reverse();
+      const maxAdded = Math.max(1, ...monthly.map(function(row) { return Number(row.total) || 0; }));
+      if (!monthly.length) {
+        document.getElementById("analyticsMonthly").innerHTML = '<div class="records-empty">No monthly added-stock values found for this filter.</div>';
+      } else {
+        document.getElementById("analyticsMonthly").innerHTML = '<div class="analytics-month-list">' + monthly.map(function(row) {
+          const width = Math.round((Number(row.total) || 0) / maxAdded * 100);
+          return '<div class="analytics-month-row"><span class="analytics-month-label">' + escapeHtml(row.month) + '</span><div class="analytics-month-track"><span style="width:' + width + '%"></span></div><span class="analytics-month-value">' + Number(row.total || 0).toLocaleString() + '</span></div>';
+        }).join("") + '</div>';
+      }
+    }
+
+    function loadRecordsPage() {
+      loadIncomingRecords();
+      loadHistoricalRecords();
+    }
+
+    function setRecordsTab(tab) {
+      activeRecordsTab = tab;
+      document.querySelectorAll("[data-record-tab]").forEach(function(button) {
+        button.classList.toggle("active", button.getAttribute("data-record-tab") === tab);
+      });
+      const search = document.getElementById("recordsSearch");
+      if (search) search.placeholder = tab === "transactions" ? "Search item, location or remarks…" : "Search item or month…";
+      renderRecordsView();
+    }
+
+    function loadHistoricalRecords() {
+      if (historicalRecordsLoading) return;
+      if (typeof google === "undefined" || !google.script || !google.script.run) return;
+      historicalRecordsLoading = true;
+      google.script.run.withSuccessHandler(function(data) {
+        historicalRecordsLoading = false;
+        historicalRecords = data || { incoming: [], months: [] };
+        populateRecordsYears();
+        renderRecordsView();
+      }).withFailureHandler(function(error) {
+        historicalRecordsLoading = false;
+        const content = document.getElementById("recordsContent");
+        if (content && activeRecordsTab === "history") {
+          content.className = "records-empty";
+          content.textContent = "Could not load historical records: " + (error && error.message ? error.message : String(error || "Unknown error"));
+        }
+      }).getStoreHistoricalRecords();
+    }
+
+    function loadIncomingRecords() {
+      const content = document.getElementById("recordsContent");
+      const count = document.getElementById("recordsCount");
+      if (incomingRecordsLoading) return;
+      if (typeof google === "undefined" || !google.script || !google.script.run) {
+        if (content) { content.className = "records-empty"; content.textContent = "Open the deployed Apps Script web app to load records."; }
+        return;
+      }
+      incomingRecordsLoading = true;
+      google.script.run.withSuccessHandler(function(data) {
+        incomingRecordsLoading = false;
+        incomingRecords = data && Array.isArray(data.records) ? data.records : [];
+        if (count && activeRecordsTab === "transactions") count.textContent = data && data.message ? data.message : (incomingRecords.length + " transactions");
+        renderRecordsView();
+      }).withFailureHandler(function(error) {
+        incomingRecordsLoading = false;
+        if (activeRecordsTab === "transactions" && content) {
+          content.className = "records-empty";
+          content.textContent = "Could not load transaction log: " + (error && error.message ? error.message : String(error || "Unknown error"));
+        }
+      }).getIncomingStockRecords(500);
+    }
+
+    function populateRecordsYears() {
+      const select = document.getElementById("recordsYear");
+      if (!select) return;
+      const oldValue = select.value;
+      const records = historicalRecords.incoming || [];
+      const years = Array.from(new Set(records.map(function(r) { return String(r.monthKey || "").slice(0,4); }).filter(Boolean))).sort().reverse();
+      select.replaceChildren(new Option("All years", ""));
+      years.forEach(function(year) { select.add(new Option(year, year)); });
+      if (years.indexOf(oldValue) >= 0) select.value = oldValue;
+    }
+
+    function renderRecordsView() {
+      const content = document.getElementById("recordsContent");
+      const count = document.getElementById("recordsCount");
+      const searchBox = document.getElementById("recordsSearch");
+      const yearBox = document.getElementById("recordsYear");
+      if (!content) return;
+      const query = String(searchBox ? searchBox.value : "").trim().toLowerCase();
+      const year = String(yearBox ? yearBox.value : "");
+      let rows = [];
+      let headers = [];
+      if (activeRecordsTab === "history") {
+        rows = historicalRecords.incoming || [];
+        headers = ["Month", "Item", "Quantity Added"];
+      } else {
+        rows = incomingRecords || [];
+        headers = ["Date / Time", "Item", "Destination", "Packages", "Multiplier", "Stock added", "Monthly record", "Remarks", "Action"];
+      }
+      const filtered = rows.filter(function(record) {
+        const monthKey = String(record.monthKey || "");
+        const recordYear = activeRecordsTab === "transactions"
+          ? (String(record.timestamp || "").match(/\b(20\d{2})\b/) || [])[1] || ""
+          : monthKey.slice(0,4);
+        if (year && recordYear !== year) return false;
+        const values = activeRecordsTab === "transactions"
+          ? [record.timestamp, record.item, record.destination, record.monthlyRecord, record.remarks]
+          : [record.item, record.month, record.displayValue, record.value];
+        return values.some(function(value) { return String(value == null ? "" : value).toLowerCase().includes(query); });
+      });
+      if (count) count.textContent = filtered.length + " shown · " + rows.length + " total";
+      if (!filtered.length) {
+        content.className = "records-empty";
+        content.textContent = query || year ? "No records match these filters." : (activeRecordsTab === "history" ? "No added-stock entries were found in New Stock." : "No incoming stock transactions yet. Use Incoming to record a receipt.");
+        return;
+      }
+      content.className = "records-table-wrap";
+      const table = document.createElement("table"); table.className = "records-table";
+      const thead = document.createElement("thead"); const headerRow = document.createElement("tr");
+      headers.forEach(function(label) { const th = document.createElement("th"); th.textContent = label; headerRow.appendChild(th); });
+      thead.appendChild(headerRow); table.appendChild(thead);
+      const tbody = document.createElement("tbody");
+      filtered.forEach(function(record) {
+        const tr = document.createElement("tr");
+        let values;
+        if (activeRecordsTab === "transactions") {
+          values = [record.timestamp, record.item, record.destination, showQuantity(record.packageQuantity), showQuantity(record.multiplier), showQuantity(record.stockUnitsAdded), record.monthlyRecord, record.remarks || "—"];
+        } else {
+          values = [record.month, record.item, record.displayValue || (record.value == null ? "—" : showQuantity(record.value))];
+        }
+        values.forEach(function(value, index) { const td = document.createElement("td"); td.textContent = value == null ? "—" : String(value); if (index === (activeRecordsTab === "transactions" ? 1 : 0)) td.className = "records-item"; tr.appendChild(td); });
+        if (activeRecordsTab === "transactions") {
+          const actionCell = document.createElement("td");
+          const deleteButton = document.createElement("button");
+          deleteButton.type = "button";
+          deleteButton.className = "records-delete-button";
+          deleteButton.textContent = "Delete";
+          deleteButton.setAttribute("aria-label", "Delete transaction for " + record.item + " dated " + record.timestamp);
+          deleteButton.addEventListener("click", function() { deleteIncomingTransaction(record.logRow, record); });
+          actionCell.appendChild(deleteButton);
+          tr.appendChild(actionCell);
+        }
+        tbody.appendChild(tr);
+      });
+      table.appendChild(tbody); content.replaceChildren(table);
+    }
+
+    let deletingIncomingTransaction = false;
+
+    function deleteIncomingTransaction(logRow, record) {
+      if (deletingIncomingTransaction) return;
+      const detail = (record.item || "item") + " · " + (record.destination || "destination") + " · " + (record.stockUnitsAdded || "quantity") + " units · " + (record.timestamp || "date");
+      const confirmed = window.confirm("Delete this transaction?\n\n" + detail + "\n\nThis will subtract the receipt from the destination's current stock and from the matching month's New Stock total. This cannot be undone from the app.");
+      if (!confirmed) return;
+      if (typeof google === "undefined" || !google.script || !google.script.run) {
+        window.alert("Open the deployed ORTH-STORE web app to delete a transaction.");
+        return;
+      }
+      deletingIncomingTransaction = true;
+      google.script.run.withSuccessHandler(function(result) {
+        deletingIncomingTransaction = false;
+        window.alert(result && result.message ? result.message : "Transaction deleted.");
+        loadRecordsPage();
+      }).withFailureHandler(function(error) {
+        deletingIncomingTransaction = false;
+        window.alert("Could not delete transaction: " + (error && error.message ? error.message : String(error || "Unknown error")));
+      }).deleteIncomingStockRecord(logRow);
+    }
+
+    let incomingFormLoaded = false;
+    let incomingFormLoading = false;
+
+    function loadIncomingStockFormData(forceReload) {
+      if (incomingFormLoading || (incomingFormLoaded && !forceReload)) return;
+      incomingFormLoading = true;
+      const monthLabel = document.getElementById("incomingMonthLabel");
+      const itemSelect = document.getElementById("incomingItem");
+      monthLabel.textContent = "Checking month…";
+      itemSelect.innerHTML = '<option value="">Loading items…</option>';
+      if (typeof google === "undefined" || !google.script || !google.script.run) {
+        incomingFormLoading = false;
+        itemSelect.innerHTML = '<option value="">Open the deployed web app</option>';
+        showIncomingResult("This form must be opened from the deployed Apps Script web app.", false);
+        return;
+      }
+      const loadStarted = Date.now();
+      google.script.run
+        .withSuccessHandler(function (data) {
+          incomingFormLoading = false;
+          incomingFormLoaded = true;
+          monthLabel.textContent = data.monthLabel || "Month not available";
+          itemSelect.innerHTML = '<option value="">Choose an item</option>';
+          (data.items || []).forEach(function (item) {
+            const option = document.createElement("option");
+            option.value = item;
+            option.textContent = item;
+            itemSelect.appendChild(option);
+          });
+          const locationSelect = document.getElementById("incomingLocation");
+          locationSelect.innerHTML = "";
+          (data.locations || ["ED", "Clinic", "OT", "Ward", "Paed"]).forEach(function (location) {
+            const option = document.createElement("option");
+            option.value = location;
+            option.textContent = location;
+            locationSelect.appendChild(option);
+          });
+          if (!data.items || !data.items.length) showIncomingResult("No item names were found in ALL!A2:A38.", false);
+          else if (data.monthError) showIncomingResult("Items loaded, but monthly target is unavailable: " + data.monthError, false);
+          updateIncomingCalculation();
+        })
+        .withFailureHandler(function (error) {
+          incomingFormLoading = false;
+          incomingFormLoaded = false;
+          monthLabel.textContent = "Unavailable";
+          itemSelect.innerHTML = '<option value="">Could not load items</option>';
+          showIncomingResult((error && error.message ? error.message : String(error || "Could not load the form.")) + " You can tap here to retry.", false);
+          itemSelect.innerHTML = '<option value="">Tap to retry loading items</option>';
+        })
+        .getIncomingStockFormData();
+    }
+
+    function submitIncomingStockForm(event) {
+      event.preventDefault();
+      const form = document.getElementById("incomingStockForm");
+      const button = document.getElementById("incomingSubmitButton");
+      const payload = {
+        itemName: document.getElementById("incomingItem").value,
+        locationName: document.getElementById("incomingLocation").value,
+        quantity: document.getElementById("incomingQuantity").value,
+        multiplier: document.getElementById("incomingMultiplier").value,
+        remarks: document.getElementById("incomingRemarks").value
+      };
+      if (!payload.itemName || !payload.locationName || payload.quantity === "" || Number(payload.quantity) <= 0 ||
+          payload.multiplier === "" || !Number.isFinite(Number(payload.multiplier)) || Number(payload.multiplier) <= 0) {
+        showIncomingResult("Choose an item and destination, and enter valid positive quantity and multiplier values.", false);
+        return;
+      }
+      button.disabled = true;
+      button.textContent = "Saving stock…";
+      showIncomingResult("", false);
+      google.script.run
+        .withSuccessHandler(function (result) {
+          button.disabled = false;
+          button.textContent = "＋ Receive Stock";
+          showIncomingResult(result.message + " Monthly incoming total: " + showQuantity(result.newIncoming) + "; updated location stock: " + showQuantity(result.newCurrent) + ".", true);
+          document.getElementById("incomingQuantity").value = "";
+          document.getElementById("incomingMultiplier").value = "1";
+          document.getElementById("incomingRemarks").value = "";
+          updateIncomingCalculation();
+          refreshDashboard();
+          if (typeof loadInventory === "function") loadInventory();
+          showToast("Incoming stock recorded successfully.");
+        })
+        .withFailureHandler(function (error) {
+          button.disabled = false;
+          button.textContent = "＋ Receive Stock";
+          showIncomingResult(error && error.message ? error.message : String(error || "Could not record incoming stock."), false);
+        })
+        .submitIncomingStock(payload);
+    }
+
+    function updateIncomingCalculation() {
+      const quantityInput = document.getElementById("incomingQuantity");
+      const multiplierInput = document.getElementById("incomingMultiplier");
+      const output = document.getElementById("incomingCalculation");
+      if (!quantityInput || !multiplierInput || !output) return;
+      const quantity = Number(quantityInput.value || 0);
+      const multiplier = Number(multiplierInput.value || 0);
+      const total = quantity * multiplier;
+      output.textContent = "Stock units to add: " +
+        (Number.isFinite(total) && total >= 0 ? showQuantity(total) : "—");
+    }
+
+    document.addEventListener("input", function (event) {
+      if (event.target && (event.target.id === "incomingQuantity" || event.target.id === "incomingMultiplier")) {
+        updateIncomingCalculation();
+      }
+    });
+    document.addEventListener("change", function (event) {
+      if (event.target && event.target.id === "incomingItem" && event.target.value === "") {
+        // no-op: keep the form ready for selection
+      }
+    });
+    document.addEventListener("click", function (event) {
+      const select = document.getElementById("incomingItem");
+      if (select && event.target === select && !incomingFormLoaded && !incomingFormLoading) {
+        loadIncomingStockFormData(true);
+      }
+    });
+
+    function showIncomingResult(message, success) {
+      const result = document.getElementById("incomingResult");
+      if (!message) {
+        result.textContent = "";
+        result.className = "incoming-result";
+        return;
+      }
+      result.textContent = message;
+      result.className = "incoming-result " + (success ? "success" : "error");
+    }
+
+    function loadInventory() {
+      if (typeof google === "undefined" || !google.script || !google.script.run) {
+        document.getElementById("inventoryItems").className = "inventory-loading";
+        document.getElementById("inventoryItems").textContent =
+          "Open the deployed Apps Script web app to load inventory.";
+        return;
+      }
+
+      const requestNumber = ++inventoryRequestNumber;
+      document.getElementById("inventoryItems").className = "inventory-loading";
+      document.getElementById("inventoryItems").textContent =
+        "Loading " + selectedInventoryLocation + " inventory…";
+      updateInventoryLocationButtons();
+
+      const runner = google.script.run
+        .withSuccessHandler(function (result) {
+          if (requestNumber !== inventoryRequestNumber) return;
+          if (!result || !result.success) {
+            document.getElementById("inventoryItems").className = "inventory-loading";
+            document.getElementById("inventoryItems").textContent = "No inventory data was returned.";
+            return;
+          }
+          currentInventoryItems = result.items || [];
+          renderInventoryItems();
+        })
+        .withFailureHandler(function (error) {
+          if (requestNumber !== inventoryRequestNumber) return;
+          const message = error && error.message ? error.message : String(error || "Unknown error");
+          document.getElementById("inventoryItems").className = "inventory-loading";
+          document.getElementById("inventoryItems").textContent = "Could not load inventory: " + message;
+        });
+
+      if (selectedInventoryLocation === "ALL") {
+        runner.getStoreAllInventory();
+      } else {
+        runner.getStoreInventory(selectedInventoryLocation);
+      }
+    }
+
+    function renderInventoryItems() {
+      const container = document.getElementById("inventoryItems");
+      if (!container) return;
+
+      const search = String(document.getElementById("inventorySearch").value || "").trim().toLowerCase();
+      const items = currentInventoryItems.filter(function (item) {
+        return String(item.name || "").toLowerCase().includes(search);
+      });
+
+      document.getElementById("inventoryCount").textContent =
+        items.length + (items.length === 1 ? " item" : " items");
+
+      if (!items.length) {
+        container.className = "inventory-loading";
+        container.textContent = search ? "No items match your search." : "No inventory items found.";
+        return;
+      }
+
+      if (selectedInventoryLocation === "ALL") {
+        container.innerHTML = "";
+        if (inventoryView === "card") {
+          container.className = "all-items-cards";
+          items.forEach(function (item) {
+            container.appendChild(createAllLocationCard(item));
+          });
+        } else {
+          container.className = "matrix-scroll";
+          container.appendChild(createAllLocationMatrix(items));
+        }
+        return;
+      }
+
+      container.innerHTML = "";
+      container.className = inventoryView === "card" ? "inventory-grid" : "inventory-list";
+
+      items.forEach(function (item, index) {
+        if (inventoryView === "card") {
+          container.appendChild(createInventoryCard(item, index));
+        } else {
+          container.appendChild(createInventoryListRow(item, index));
+        }
+      });
+    }
+
+    function getStockForLocation(item, location) {
+      if (!item || !item.locations) return null;
+
+      const aliases = {
+        "ED": ["ED"],
+        "Clinic": ["Clinic"],
+        "OT": ["OT"],
+        "Ward": ["Ward", "W11D"],
+        "Paed": ["Paed", "PAED"]
+      };
+
+      const keys = aliases[location] || [location];
+      for (let i = 0; i < keys.length; i++) {
+        const stock = item.locations[keys[i]];
+        if (stock) return stock;
+      }
+      return null;
+    }
+
+    function createAllLocationCard(item) {
+      const card = document.createElement("article");
+      card.className = "all-item-card";
+
+      const title = document.createElement("h3");
+      title.className = "all-item-title";
+      title.textContent = item.name;
+      card.appendChild(title);
+
+      const grid = document.createElement("div");
+      grid.className = "all-location-grid";
+
+      ["ED", "Clinic", "OT", "Ward", "Paed"].forEach(function (location) {
+        const stock = getStockForLocation(item, location);
+        const cell = document.createElement("div");
+        const status = stock ? stock.status : "Quantity missing";
+        const statusClass = getStatusClass(status);
+        cell.className = "all-location-cell" +
+          (statusClass === "empty" || statusClass === "critical" ? " needs-review" : "") +
+          (statusClass === "over" ? " check-source" : "");
+
+        const locationName = document.createElement("span");
+        locationName.className = "all-location-name";
+        locationName.textContent = location;
+
+        const quantity = document.createElement("span");
+        quantity.className = "all-location-quantity";
+        quantity.textContent = stock ? showQuantity(stock.currentQuantity) : "—";
+
+        const maximum = document.createElement("span");
+        maximum.className = "all-location-max";
+        maximum.textContent = "Max " + (stock ? showQuantity(stock.maximumQuantity) : "—");
+
+        const statusLabel = document.createElement("span");
+        statusLabel.className = "all-location-status " + statusClass;
+        statusLabel.textContent = status;
+
+        cell.appendChild(locationName);
+        cell.appendChild(quantity);
+        cell.appendChild(maximum);
+        cell.appendChild(statusLabel);
+
+        const bar = document.createElement("div");
+        bar.className = "all-location-bar";
+        const barFill = document.createElement("span");
+        barFill.className = statusClass;
+        const pct = stock && stock.capacityPercent !== null ? Math.max(0, Math.min(Number(stock.capacityPercent), 100)) : 0;
+        barFill.style.width = pct + "%";
+        bar.appendChild(barFill);
+        cell.appendChild(bar);
+        const pctLabel = document.createElement("div");
+        pctLabel.className = "inventory-percent-row";
+        pctLabel.textContent = stock && stock.capacityPercent !== null ? pct + "% full" : "Capacity n/a";
+        cell.appendChild(pctLabel);
+
+        const edit = document.createElement("button");
+        edit.type = "button";
+        edit.className = "all-location-edit";
+        edit.textContent = "Edit qty";
+        edit.addEventListener("click", function () { promptEditInventoryQuantity(location, item.name, stock ? stock.currentQuantity : 0); });
+        cell.appendChild(edit);
+        grid.appendChild(cell);
+      });
+
+      card.appendChild(grid);
+      return card;
+    }
+
+    function createAllLocationMatrix(items) {
+      const table = document.createElement("table");
+      table.className = "inventory-matrix";
+
+      const thead = document.createElement("thead");
+      const headerRow = document.createElement("tr");
+      ["Item", "ED", "Clinic", "OT", "Ward", "Paed"].forEach(function (label) {
+        const th = document.createElement("th");
+        th.textContent = label;
+        headerRow.appendChild(th);
+      });
+      thead.appendChild(headerRow);
+      table.appendChild(thead);
+
+      const tbody = document.createElement("tbody");
+      items.forEach(function (item) {
+        const row = document.createElement("tr");
+        const nameCell = document.createElement("td");
+        nameCell.textContent = item.name;
+        row.appendChild(nameCell);
+
+        ["ED", "Clinic", "OT", "Ward", "Paed"].forEach(function (location) {
+          const td = document.createElement("td");
+          const stock = getStockForLocation(item, location);
+
+          const quantity = document.createElement("span");
+          quantity.className = "matrix-quantity";
+          quantity.textContent = stock ? showQuantity(stock.currentQuantity) : "—";
+
+          const maximum = document.createElement("span");
+          maximum.className = "matrix-max";
+          maximum.textContent = "Max " + (stock ? showQuantity(stock.maximumQuantity) : "—");
+
+          const badge = document.createElement("span");
+          badge.className = "matrix-status " + getStatusClass(stock ? stock.status : "Quantity missing");
+          badge.textContent = stock ? stock.status : "Missing";
+
+          td.appendChild(quantity);
+          td.appendChild(maximum);
+          td.appendChild(badge);
+
+          const pct = stock && stock.capacityPercent !== null ? Math.max(0, Math.min(Number(stock.capacityPercent), 100)) : 0;
+          const bar = document.createElement("div");
+          bar.className = "all-location-bar";
+          const fill = document.createElement("span");
+          fill.className = getStatusClass(stock ? stock.status : "Quantity missing");
+          fill.style.width = pct + "%";
+          bar.appendChild(fill);
+          td.appendChild(bar);
+          const pctLabel = document.createElement("span");
+          pctLabel.className = "matrix-max";
+          pctLabel.textContent = stock && stock.capacityPercent !== null ? pct + "% full" : "Capacity n/a";
+          td.appendChild(pctLabel);
+          const edit = document.createElement("button");
+          edit.type = "button";
+          edit.className = "all-location-edit";
+          edit.textContent = "Edit";
+          edit.addEventListener("click", function () { promptEditInventoryQuantity(location, item.name, stock ? stock.currentQuantity : 0); });
+          td.appendChild(edit);
+          row.appendChild(td);
+        });
+
+        tbody.appendChild(row);
+      });
+
+      table.appendChild(tbody);
+      return table;
+    }
+
+    function getStatusClass(status) {
+      if (status === "Out of stock") return "empty";
+      if (status === "Critical") return "critical";
+      if (status === "Over maximum") return "over";
+      if (status === "Quantity missing") return "missing";
+      return "normal";
+    }
+
+    function promptEditInventoryQuantity(location, itemName, currentQuantity) {
+      const currentText = currentQuantity == null ? "0" : String(currentQuantity);
+      const answer = window.prompt("Enter the new current quantity for " + itemName + " at " + location + ".", currentText);
+      if (answer === null) return;
+      const number = Number(answer);
+      if (answer.trim() === "" || !Number.isFinite(number) || number < 0) {
+        showToast("Enter a valid quantity of zero or more.");
+        return;
+      }
+      saveInventoryQuantity(location, itemName, answer, null, null);
+    }
+
+    function saveInventoryQuantity(location, itemName, rawQuantity, button, messageElement) {
+      const quantity = Number(rawQuantity);
+      if (String(rawQuantity).trim() === "" || !Number.isFinite(quantity) || quantity < 0) {
+        if (messageElement) messageElement.textContent = "Enter a valid quantity ≥ 0.";
+        else showToast("Enter a valid quantity of zero or more.");
+        return;
+      }
+      if (typeof google === "undefined" || !google.script || !google.script.run) {
+        if (messageElement) messageElement.textContent = "Open the deployed web app to save.";
+        else showToast("Open the deployed web app to save.");
+        return;
+      }
+      if (button) { button.disabled = true; button.textContent = "Saving…"; }
+      if (messageElement) messageElement.textContent = "Saving to Google Sheets…";
+      google.script.run
+        .withSuccessHandler(function (result) {
+          if (button) { button.disabled = false; button.textContent = "Save"; }
+          if (messageElement) messageElement.textContent = result && result.message ? result.message : "Saved.";
+          showToast("Quantity updated in Google Sheets.");
+          loadInventory();
+          if (typeof refreshDashboard === "function") refreshDashboard();
+        })
+        .withFailureHandler(function (error) {
+          if (button) { button.disabled = false; button.textContent = "Save"; }
+          const message = error && error.message ? error.message : String(error || "Unknown error");
+          if (messageElement) messageElement.textContent = "Not saved: " + message;
+          else showToast("Not saved: " + message);
+        })
+        .updateStoreCurrentQuantity(location, itemName, quantity);
+    }
+
+    function createInventoryCard(item, index) {
+      const card = document.createElement("article");
+      card.className = "inventory-card";
+
+      const top = document.createElement("div");
+      top.className = "inventory-card-top";
+
+      const name = document.createElement("h3");
+      name.textContent = item.name;
+
+      const badge = document.createElement("span");
+      const statusClass = getStatusClass(item.status);
+      badge.className = "stock-badge " + statusClass;
+      badge.textContent = item.status;
+
+      top.appendChild(name);
+      top.appendChild(badge);
+      card.appendChild(top);
+
+      const quantities = document.createElement("div");
+      quantities.className = "inventory-quantities";
+      const currentBlock = document.createElement("div");
+      currentBlock.className = "quantity-block";
+      const currentLabel = document.createElement("span");
+      currentLabel.textContent = "Current stock";
+      const currentValue = document.createElement("strong");
+      currentValue.textContent = showQuantity(item.currentQuantity);
+      currentBlock.appendChild(currentLabel);
+      currentBlock.appendChild(currentValue);
+      const editRow = document.createElement("div");
+      editRow.className = "inventory-edit-row";
+      const input = document.createElement("input");
+      input.type = "number"; input.min = "0"; input.step = "any";
+      input.className = "inventory-edit-input";
+      input.value = item.currentQuantity == null ? "" : item.currentQuantity;
+      input.setAttribute("aria-label", "New current quantity for " + item.name);
+      const save = document.createElement("button");
+      save.type = "button"; save.className = "inventory-save-button"; save.textContent = "Save";
+      const message = document.createElement("div"); message.className = "inventory-edit-message";
+      save.addEventListener("click", function () { saveInventoryQuantity(selectedInventoryLocation, item.name, input.value, save, message); });
+      editRow.appendChild(input); editRow.appendChild(save);
+      currentBlock.appendChild(editRow); currentBlock.appendChild(message);
+      quantities.appendChild(currentBlock);
+      quantities.appendChild(createQuantityBlock("Maximum stock", showQuantity(item.maximumQuantity)));
+      card.appendChild(quantities);
+
+      const track = document.createElement("div");
+      track.className = "capacity-track";
+      const fill = document.createElement("div");
+      fill.className = "capacity-fill " + statusClass;
+      const percent = item.capacityPercent === null ? 0 : Math.max(0, Math.min(item.capacityPercent, 100));
+      fill.style.width = percent + "%";
+      track.appendChild(fill);
+      card.appendChild(track);
+
+      const caption = document.createElement("div");
+      caption.className = "capacity-caption";
+      caption.textContent = item.capacityPercent === null
+        ? "Storage usage unavailable"
+        : item.capacityPercent + "% of maximum capacity";
+      card.appendChild(caption);
+
+      return card;
+    }
+
+    function createQuantityBlock(label, value) {
+      const block = document.createElement("div");
+      block.className = "quantity-block";
+      const labelElement = document.createElement("span");
+      labelElement.textContent = label;
+      const valueElement = document.createElement("strong");
+      valueElement.textContent = value;
+      block.appendChild(labelElement);
+      block.appendChild(valueElement);
+      return block;
+    }
+
+    function createInventoryListRow(item, index) {
+      const row = document.createElement("article");
+      row.className = "inventory-list-row";
+
+      const name = document.createElement("div");
+      name.className = "inventory-list-name";
+      name.textContent = item.name;
+
+      const current = document.createElement("div");
+      current.className = "inventory-list-cell";
+      current.innerHTML = "<span>Current</span>";
+      const currentValue = document.createElement("strong");
+      currentValue.textContent = showQuantity(item.currentQuantity);
+      current.appendChild(currentValue);
+      const editRow = document.createElement("div"); editRow.className = "inventory-edit-row";
+      const input = document.createElement("input"); input.type = "number"; input.min = "0"; input.step = "any";
+      input.className = "inventory-edit-input"; input.value = item.currentQuantity == null ? "" : item.currentQuantity;
+      input.setAttribute("aria-label", "New current quantity for " + item.name);
+      const save = document.createElement("button"); save.type = "button"; save.className = "inventory-save-button"; save.textContent = "Save";
+      const message = document.createElement("div"); message.className = "inventory-edit-message";
+      save.addEventListener("click", function () { saveInventoryQuantity(selectedInventoryLocation, item.name, input.value, save, message); });
+      editRow.appendChild(input); editRow.appendChild(save); current.appendChild(editRow); current.appendChild(message);
+      const pct = document.createElement("small"); pct.className = "matrix-max";
+      pct.textContent = item.capacityPercent == null ? "Capacity n/a" : item.capacityPercent + "% full";
+      current.appendChild(pct);
+      const bar = document.createElement("div"); bar.className = "all-location-bar";
+      const fill = document.createElement("span"); fill.className = getStatusClass(item.status);
+      fill.style.width = (item.capacityPercent == null ? 0 : Math.max(0, Math.min(Number(item.capacityPercent), 100))) + "%";
+      bar.appendChild(fill); current.appendChild(bar);
+
+      const maximum = document.createElement("div");
+      maximum.className = "inventory-list-cell";
+      maximum.innerHTML = "<span>Maximum</span>";
+      const maximumValue = document.createElement("strong");
+      maximumValue.textContent = showQuantity(item.maximumQuantity);
+      maximum.appendChild(maximumValue);
+
+      const badge = document.createElement("span");
+      badge.className = "stock-badge " + getStatusClass(item.status);
+      badge.textContent = item.status;
+
+      row.appendChild(name);
+      row.appendChild(current);
+      row.appendChild(maximum);
+      row.appendChild(badge);
+      return row;
+    }
+
+    function refreshDashboard() {
+      const button = document.getElementById("refreshButton");
+      button.disabled = true;
+      button.textContent = "↻ Loading…";
+      document.getElementById("statusMessage").textContent = "Loading inventory from Google Sheets…";
+
+      if (typeof google === "undefined" || !google.script || !google.script.run) {
+        button.disabled = false;
+        button.textContent = "↻ Refresh";
+        document.getElementById("statusMessage").textContent =
+          "This page is not running as a deployed Apps Script web app.";
+        showToast("Open the deployed ORTH-STORE web app to load live data.");
+        return;
+      }
+
+      google.script.run
+        .withSuccessHandler(function (data) {
+          button.disabled = false;
+          button.textContent = "↻ Refresh";
+          renderDashboard(data);
+        })
+        .withFailureHandler(function (error) {
+          button.disabled = false;
+          button.textContent = "↻ Refresh";
+          const message = error && error.message ? error.message : String(error || "Unknown error");
+          document.getElementById("statusMessage").textContent = "Could not load stock data: " + message;
+          document.getElementById("attentionList").textContent =
+            "We could not load the inventory. Check the Apps Script setup and sheet names, then try Refresh.";
+          showToast("Could not load stock data. See the message at the bottom.");
+        })
+        .getStoreDashboardData();
+    }
+
+    function renderDashboard(data) {
+      if (!data || !data.success) {
+        document.getElementById("statusMessage").textContent = "The spreadsheet did not return inventory data.";
+        return;
+      }
+
+      document.getElementById("totalItems").textContent = data.summary.totalItems;
+      document.getElementById("criticalItems").textContent = data.summary.criticalItems;
+      document.getElementById("outOfStock").textContent = data.summary.outOfStock;
+      document.getElementById("overstock").textContent = data.summary.overstock;
+
+      Object.keys(LOCATION_IDS).forEach(function (location) {
+        const summary = data.locations[location];
+        const target = document.getElementById(LOCATION_IDS[location]);
+        if (target && summary) {
+          target.textContent = summary.attentionCount;
+        }
+      });
+
+      renderAttentionItems(data.attentionItems || []);
+
+      const updated = data.updatedAt ? new Date(data.updatedAt).toLocaleTimeString([], {
+        hour: "2-digit",
+        minute: "2-digit"
+      }) : "just now";
+
+      document.getElementById("statusMessage").textContent =
+        "Live spreadsheet data loaded · Last refreshed " + updated;
+    }
+
+    function renderAttentionItems(items) {
+      const container = document.getElementById("attentionList");
+      container.className = "attention-list";
+
+      if (!items.length) {
+        container.className = "empty-state";
+        container.innerHTML = '<span class="empty-icon">✅</span><strong>No urgent stock items found</strong><br>Based on the current stock rules.';
+        return;
+      }
+
+      container.innerHTML = "";
+      items.forEach(function (item) {
+        const row = document.createElement("div");
+        row.style.cssText = "display:flex;justify-content:space-between;gap:12px;padding:12px 0;border-bottom:1px solid #e6eaf1;";
+
+        const left = document.createElement("div");
+        left.style.cssText = "min-width:0;";
+
+        const name = document.createElement("strong");
+        name.style.cssText = "display:block;font-size:13px;overflow-wrap:anywhere;";
+        name.textContent = item.name;
+
+        const detail = document.createElement("span");
+        detail.style.cssText = "display:block;margin-top:5px;color:#697386;font-size:11px;";
+        detail.textContent = item.location + " · Current: " + showQuantity(item.currentQuantity) +
+          " / Max: " + showQuantity(item.maximumQuantity);
+
+        left.appendChild(name);
+        left.appendChild(detail);
+
+        const badge = document.createElement("span");
+        badge.style.cssText = "align-self:flex-start;white-space:nowrap;border-radius:999px;padding:5px 8px;background:#fff0f0;color:#d64545;font-size:10px;font-weight:700;";
+        badge.textContent = item.status;
+
+        row.appendChild(left);
+        row.appendChild(badge);
+        container.appendChild(row);
+      });
+    }
+
+    function showQuantity(value) {
+      if (value === null || typeof value === "undefined" || value === "") return "—";
+
+      const number = Number(value);
+      if (!Number.isFinite(number)) return value;
+
+      // Remove floating-point noise and unnecessary trailing decimal zeros.
+      return String(Number(number.toFixed(3)));
+    }
+
+    function showToast(message) {
+      const toast = document.getElementById("toast");
+      toast.textContent = message;
+      toast.classList.add("show");
+      window.clearTimeout(showToast.timer);
+      showToast.timer = window.setTimeout(function () {
+        toast.classList.remove("show");
+      }, 2600);
+    }
+
+    setCurrentDate();
+    refreshDashboard();
+  </script>
+</body>
+</html>
